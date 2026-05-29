@@ -1,0 +1,49 @@
+        01 glava-g1 pic x(132) value "".
+        01 glava-g2.
+		03 fill pic x(2) value space.
+		03 fill pic x(30) value "C O M F I N".
+		03 fill pic x(20) value space.
+		03 naziv-g2 pic x(30).
+		03 fill pic x(34) value space.
+		03 fill pic x(8) value "datum : ".
+		03 datum-g2 pic z9/99/99.
+        01 glava-g3.
+		03 fill pic x(2) value space.
+		03 fill pic x(30) value space.
+		03 fill pic x(84) value space.
+		03 fill pic x(8) value "stran : ".
+		03 stran-g3 pic z(3).
+        01 glava-g4.
+		03 fill pic x(2) value space.
+		03 fill pic x(30) value space.
+		03 fill pic x(20) value space.
+		03 naslov-g4 pic x(30).
+		03 fill pic x(34) value space.
+		03 fill	pic x(8) value "  ura : ".
+		03 ura-g4 pic 99.99.
+        01 glava-g5.
+                03 fill pic x(2) value space.
+                03 fill pic x(10) value "   zbor : ".
+		03 zbor-g5	pic x(20).
+                03 fill pic x(48) value space.
+        01 glava-g6.
+                03 fill pic x(2) value space.
+		03 opis-g6 pic x(120).
+        01 glava-g7.
+                03 fill pic x(2) value space.
+                03 fill pic x(40) value space.
+                03 fill pic x(40) value space.
+                03 fill pic x(40) value space.
+        01 glava-prepogni.
+                03 fill pic x(2) value "--".
+                03 fill pic x(76) value space.
+                03 fill pic x(2) value "--".
+        01 glava-sp pic x(132) value space.
+        01 glava-crte pic x(132) value all "-".
+        01 glava-crted1.
+           03 fill pic x(32) value space.
+           03 fill pic x(48) value all "-".
+        01 glava-skupaj.
+           03 fill pic x(2) value space.
+           03 fill pic x(7) value "vseh : ".
+           03 vseh-skupaj	pic z(6).

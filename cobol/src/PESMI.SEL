@@ -1,0 +1,32 @@
+      ********************************************** pesmi.SEL
+            select pesmi assign to disk
+                organization is indexed
+                access mode is dynamic
+                record key is pesmi-ownkey
+                alternate record key is pesmi-naziv
+				with duplicates
+                alternate record key is pesmi-verz
+				with duplicates
+                alternate record key is pesmi-zbor-naziv =
+			pesmi-zbori pesmi-naziv
+				with duplicates
+
+                alternate record key is pesmi-prired-naziv =
+			pesmi-prired pesmi-naziv
+				with duplicates
+
+		alternate record key is pesmi-osnova-naziv =
+			pesmi-osnova pesmi-naziv
+				with duplicates
+
+      *                alternate record key is pesmi-prired-zbori =
+      *			pesmi-prired pesmi-zbori pesmi-naziv
+      *				with duplicates
+
+                alternate record key is pesmi-prired-zbori-naziv =
+			pesmi-prired pesmi-zbori pesmi-naziv
+				with duplicates
+		alternate record key is pesmi-osnova-zbori-naziv =
+			pesmi-osnova pesmi-zbori pesmi-naziv
+				with duplicates
+                file status s-pesmi.

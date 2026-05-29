@@ -1,0 +1,15 @@
+      *********************** PESMI.LIB 
+        fd      pesmi
+                        label record standard
+                        value of file-id is '\dusan\idx\pesmi.ind'.
+        01      pesmi-area.
+                03 pesmi-ownkey.
+			05	pesmi-zbori	pic 9(2).
+			05	pesmi-stevilka	pic 9(5).
+                03 pesmi-naziv		pic x(40).
+		03 pesmi-prired		pic 9(6).
+		03 pesmi-opomba		pic x(30).
+		03 pesmi-osnova		pic 9(6).
+		03 pesmi-verz		pic x(20).
+		03 pesmi-filler		pic x(19).
+

@@ -1,0 +1,14 @@
+      **************************************************
+      * dusan.scr
+      **************************************************
+	copy "melodija.ss".
+	copy "vinko.ss".
+	copy "men000.ss".
+	copy "men001.ss".
+	copy "men002.ss".
+	copy "men003.ss".
+	copy "men004.ss".
+
+      *	01  a-izbira    line 21 column 68 pic x(1)
+	01  a-izbira    line 24 column 1 pic x(1)
+		using i-izbira auto no-echo.

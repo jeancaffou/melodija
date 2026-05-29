@@ -1,0 +1,20 @@
+# Normalize app text files automatically.
+* text=auto
+
+# Legacy COBOL text files are DOS-era files. Pin them to CRLF so Windows
+# editors do not produce line-ending-only diffs.
+cobol/** text eol=crlf
+
+# Keep known binary assets and legacy data files opaque.
+*.ico -text -diff -merge -eol
+*.db -text -diff -merge -eol
+cobol/**/*.COM -text -diff -merge -eol
+cobol/**/*.EXE -text -diff -merge -eol
+cobol/**/*.IDX -text -diff -merge -eol
+cobol/**/*.IDY -text -diff -merge -eol
+cobol/**/*.IND -text -diff -merge -eol
+cobol/**/*.INT -text -diff -merge -eol
+cobol/**/*.LBR -text -diff -merge -eol
+cobol/**/*.LIB -text -diff -merge -eol
+cobol/**/*.LNK -text -diff -merge -eol
+cobol/**/*.SRN -text -diff -merge -eol

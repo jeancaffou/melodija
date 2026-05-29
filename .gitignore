@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+.idea/
+
+# Build and release artefacts
+dist/
+release/
+*.log
+*.tmp
+*.temp
+
+# Local/generated data
+melodija.db
+backups/
+
+# Scratch/reference material
+aesthetic/

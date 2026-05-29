@@ -1,0 +1,5 @@
+ECHO OFF
+cls
+CD C:\DUSAN\IDX\
+C:\DUSAN\SRC\ARJ A -VA A:dusidx *.*
+CD C:\DUSAN\src

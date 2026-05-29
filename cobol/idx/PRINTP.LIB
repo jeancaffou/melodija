@@ -1,0 +1,4 @@
+        fd    printp label record standard
+               value of file-id is '\dusan\prt\dusan.lis'.
+      *        linage 72.
+        01      vrsta pic x(80).

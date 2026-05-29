@@ -1,0 +1,4 @@
+      * PRINT132.SEL
+	select print132 assign to disk
+		organization is line sequential
+		file status s-printp.

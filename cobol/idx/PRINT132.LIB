@@ -1,0 +1,4 @@
+      * PRINT132.LIB
+        fd	print132 label record standard
+			value of file-id is '\dusan\prt\dusan.lis'.
+        01	vrsta pic x(132).

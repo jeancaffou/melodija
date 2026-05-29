@@ -1,0 +1,284 @@
+      *------------------ LHSEKR.LIB ----------------------------------
+        SCREEN SECTION.
+       copy okvlis40.ss.
+        01  GLAVA-SCREEN.
+                05 BLANK SCREEN
+                        foreground-color 7
+                        background-color 1.
+                05 LINE 1 COLUMN 1  VALUE
+                        "V i n k o                 "
+                        BACKGROUND-COLOR 5
+                        FOREGROUND-COLOR 2.
+                05 LINE 1 COLUMN 19 VALUE
+                "      N A S L O V I   P E S M I         "
+                        HIGHLIGHT
+                        BACKGROUND-COLOR 5
+                        FOREGROUND-color 6.
+                05 LINE 1 COLUMN 73 VALUE "SLO-2.3"
+                        HIGHLIGHT
+                        BACKGROUND-COLOR 5
+                        FOREGROUND-color 2.
+                05 LINE 2 COLUMN 1 PIC X(80) USING PROGRM
+                        BACKGROUND-COLOR 5
+                        FOREGROUND-color 2.
+                05 LINE 2 COLUMN 21 PIC X(30) USING NASL
+                        HIGHLIGHT
+                        BACKGROUND-COLOR 5
+                        FOREGROUND-color 2.
+                05 LINE 2 COLUMN 62 VALUE " Datum: ".
+                05 LINE 2 COLUMN 70 PIC 99 USING DD.
+                05 LINE 2 COLUMN 72 VALUE ".".
+                05 LINE 2 COLUMN 73 PIC 99 USING DM.
+                05 LINE 2 COLUMN 75 VALUE ".19".
+                05 LINE 2 COLUMN 78 PIC 99 USING DL.
+
+                05  LINE 3 COLUMN 1 highlight
+               VALUE "컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴
+      -              "컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴".
+      *        VALUE "__________________________________________________
+      *              "______________________________".
+
+                05  LINE 23 COLUMN 1 HIGHLIGHT
+               VALUE "컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴
+      -              "컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴".
+      *        VALUE "__________________________________________________
+      *              "______________________________".
+       01  DICH LINE 25 COLUMN 79 PIC X FROM ICH TO ICH AUTO
+                        FOREGROUND-COLOR 4.
+       01  FILER LINE 25 COLUMN 10 HIGHLIGHT PIC X(60) FROM WFL
+                        FOREGROUND-COLOR 4.
+       01  L-PRINTAJ.
+                03 LINE 14 COLUMN 21 REVERSE-VIDEO VALUE
+                "                                        "
+                        BACKGROUND-COLOR 4
+                        FOREGROUND-COLOR 2.
+                03 LINE 15 COLUMN 21 REVERSE-VIDEO VALUE
+                "                                        "
+                        BACKGROUND-COLOR 4
+                        FOREGROUND-COLOR 2.
+                03 LINE 16 COLUMN 21 REVERSE-VIDEO VALUE
+                "                                        "
+                        BACKGROUND-COLOR 4
+                        FOREGROUND-COLOR 2.
+                03 LINE 15 COLUMN 34 BLINK HIGHLIGHT VALUE
+                " KREIRAM LISTO "
+                        BACKGROUND-COLOR 4
+                        FOREGROUND-COLOR 2.
+       01  L-DELAJ.
+                03 LINE 14 COLUMN 21 REVERSE-VIDEO VALUE
+                "                                        "
+                        BACKGROUND-COLOR 4
+                        FOREGROUND-COLOR 2.
+                03 LINE 15 COLUMN 21 REVERSE-VIDEO VALUE
+                "                                        "
+                        BACKGROUND-COLOR 4
+                        FOREGROUND-COLOR 2.
+                03 LINE 16 COLUMN 21 REVERSE-VIDEO VALUE
+                "                                        "
+                        BACKGROUND-COLOR 4
+                        FOREGROUND-COLOR 2.
+                03 LINE 15 COLUMN 34 BLINK HIGHLIGHT VALUE
+                "     DELAM     "
+                        BACKGROUND-COLOR 4
+                        FOREGROUND-COLOR 2.
+        01      L-POTRDI.
+             03 LINE 25 COLUMN 37 VALUE
+                "  <F1> ali <D> = Potrditev zapisa  "
+                        HIGHLIGHT
+                        FOREGROUND-COLOR 2.
+             03 LINE 25 COLUMN 75  PIC X USING ws-potrdi AUTO
+                        FOREGROUND-COLOR 7.
+        01      L-BRISI.
+             03 LINE 25 COLUMN 37 VALUE
+                "  <F1> ali <D> = Potrditev brisanja"
+                        HIGHLIGHT
+                        FOREGROUND-COLOR 2.
+             03 LINE 25 COLUMN 75  PIC X USING ws-potrdi AUTO
+                        FOREGROUND-COLOR 7.
+        01      L-PUTERR.
+             03 LINE 25 COLUMN 1 PIC X(79) USING ws-PUTERR AUTO
+                        HIGHLIGHT
+                        FOREGROUND-COLOR 2.
+        01      L-KARKOLI.
+             03 LINE 25 COLUMN 37 VALUE "  Pritisni katerokoli tipko  "
+                        HIGHLIGHT
+                        FOREGROUND-COLOR 2.
+             03 LINE 25 COLUMN 75  PIC X USING ws-potrdi AUTO
+                        FOREGROUND-COLOR 7.
+       01 HELP-SCREEN.
+           03 LINE 7 COLUMN 42 REVERSE-VIDEO VALUE
+                "       POMEN FUNKCIJSKIH TIPK       "
+                        FOREGROUND-COLOR 3
+                        BACKGROUND-COLOR 5.
+           03 LINE 8 COLUMN 42 VALUE
+                "                                    "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+           03 LINE 9 COLUMN 42 HIGHLIGHT VALUE " ESC "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 3.
+           03 LINE 9 COLUMN 47 VALUE
+                "- Skok na zacetek,             "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+           03 LINE 10 COLUMN 42 VALUE
+                "       ponovni ESC - konec          "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+           03 LINE 11 COLUMN 42 HIGHLIGHT VALUE " F1  "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 3.
+           03 LINE 11 COLUMN 47 VALUE
+                "- Potrditev                    "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+           03 LINE 12 COLUMN 42 HIGHLIGHT VALUE " F2  "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 3.
+           03 LINE 12 COLUMN 47 VALUE
+                "- Kratka pomoc pri polju,      "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+           03 LINE 13 COLUMN 42 VALUE
+                "       na katerem je kurzor         "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+           03 LINE 14 COLUMN 42 HIGHLIGHT VALUE " F3  "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 3.
+           03 LINE 14 COLUMN 47 VALUE
+                "- Prikaz te slike              "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+           03 LINE 15 COLUMN 42 HIGHLIGHT VALUE " F4  "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 3.
+           03 LINE 15 COLUMN 47 VALUE
+                "- Polje nazaj                  "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+           03 LINE 16 COLUMN 42 HIGHLIGHT VALUE " F5  "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 3.
+           03 LINE 16 COLUMN 47 VALUE
+                "- Listanje po {ifri            "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+           03 LINE 17 COLUMN 42 HIGHLIGHT VALUE " F6  "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 3.
+           03 LINE 17 COLUMN 47 VALUE
+                "- Listanje po nazivu           "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+           03 LINE 18 COLUMN 42 HIGHLIGHT VALUE " F7  "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 3.
+           03 LINE 18 COLUMN 47 VALUE
+                "- Izpis po {ifri               "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+           03 LINE 19 COLUMN 42 HIGHLIGHT VALUE " F8  "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 3.
+           03 LINE 19 COLUMN 47 VALUE
+                "- Izpis po nazivu              "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+           03 LINE 20 COLUMN 42 HIGHLIGHT VALUE " F9  "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 3.
+           03 LINE 20 COLUMN 47 VALUE
+                "- Samo aktivna slika           "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+           03 LINE 21 COLUMN 42 HIGHLIGHT VALUE " F10 "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 3.
+           03 LINE 21 COLUMN 47 VALUE
+                "- Brisanje obstojecega zapisa  "
+                        FOREGROUND-COLOR 1
+                        BACKGROUND-COLOR 5.
+      ********************************************************
+       01 L-WS-OKVEMP LINE OKVEMP-LIN COL OKVEMP-COL SIZE OKVEMP-SIZ
+               VALUE "
+      -              "                                "
+                BACKGROUND-COLOR 0
+                FOREGROUND-COLOR 1.
+      *************************************************************
+       01 L-NAZIV-20.
+             03 LINE 25 COLUMN 7 VALUE " Vnesi naziv : "
+                        HIGHLIGHT
+                        FOREGROUND-COLOR 3.
+             03 LINE 25 COLUMN 25  PIC X(20) USING WS-NAZIV AUTO
+                        FOREGROUND-COLOR 3.
+       01 L-KLJUC-N6.
+             03 LINE 25 COLUMN 7 VALUE " Vnesi {ifro : "
+                        HIGHLIGHT
+                        FOREGROUND-COLOR 3.
+             03 LINE 25 COLUMN 25  PIC Z(6) USING WS-KLJUC-N15 AUTO
+                        FOREGROUND-COLOR 3.
+       01 L-KLJUC-A6.
+             03 LINE 25 COLUMN 7 VALUE " Vnesi {ifro : "
+                        HIGHLIGHT
+                        FOREGROUND-COLOR 3.
+             03 LINE 25 COLUMN 25  PIC X(6) USING WS-KLJUC-A15 AUTO
+                        FOREGROUND-COLOR 3.
+       01 L-KLJUC-A15.
+             03 LINE 25 COLUMN 7 VALUE " Vnesi {ifro : "
+                        HIGHLIGHT
+                        FOREGROUND-COLOR 3.
+             03 LINE 25 COLUMN 25  PIC X(15) USING WS-KLJUC-N15 AUTO
+                        FOREGROUND-COLOR 3.
+       01 L-KLJUC-A20.
+             03 LINE 25 COLUMN 7 VALUE " Vnesi {ifro : "
+                        HIGHLIGHT
+                        FOREGROUND-COLOR 3.
+             03 LINE 25 COLUMN 25  PIC X(20) USING WS-KLJUC-A20 AUTO
+                        FOREGROUND-COLOR 3.
+       01 L-KLJUC-A40.
+             03 LINE 25 COLUMN 7 VALUE " Vnesi {ifro : "
+                        HIGHLIGHT
+                        FOREGROUND-COLOR 3.
+             03 LINE 25 COLUMN 25  PIC X(40) USING WS-KLJUC-A40 AUTO
+                        FOREGROUND-COLOR 3.
+
+       01 LISTANJE-40.
+             03 LINE 6 COLUMN 40 REVERSE-VIDEO
+              VALUE "               LISTANJE                 "
+                        BACKGROUND-color 5
+                        FOREGROUND-COLOR 3.
+
+       01 L-WS-BUFFER-40 VALUE
+                    "                                        "
+                BACKGROUND-COLOR 0
+                FOREGROUND-COLOR 3.
+
+        01 LISTANJE-NASLOV LINE 7 COLUMN 40
+                        PIC X(40) USING LISTANJE-OPIS
+                        UNDERLINE
+                        BACKGROUND-COLOR 0
+                        FOREGROUND-COLOR 3.
+       01 LISTANJE-30.
+             03 LINE 6 COLUMN 50 REVERSE-VIDEO
+              VALUE "          LISTANJE            "
+                        BACKGROUND-color 5
+                        FOREGROUND-COLOR 3.
+
+       01 L-WS-BUFFER-30 VALUE
+                    "                              "
+                BACKGROUND-COLOR 0
+                FOREGROUND-COLOR 3.
+
+        01 LISTANJE-NASLOV-30 LINE 7 COLUMN 50
+                        PIC X(30) USING LISTANJE-OPIS-30
+                        UNDERLINE
+                        BACKGROUND-COLOR 0
+                        FOREGROUND-COLOR 3.
+      *------MARE
+       01 L-KLJUC-N3.
+             03 LINE 25 COLUMN 7 VALUE " Vnesi {ifro : "
+                        HIGHLIGHT
+                        FOREGROUND-COLOR 3.
+             03 LINE 25 COLUMN 25  PIC Z(3) USING WS-KLJUC-N3 AUTO
+                        FOREGROUND-COLOR 3.

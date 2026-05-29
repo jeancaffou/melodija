@@ -1,0 +1,832 @@
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page   1
+*                                        PREPES
+* No options selected
+     1  identification division.
+     2* rebuild pesmi
+     3  program-id.    prepes.
+     4  author.        cene.
+     5  environment division.
+     6  configuration section.
+     7  special-names.
+     8          printer is konzola
+     9          decimal-point is comma.
+    10  input-output section.
+    11  file-control.
+*   12          copy pesmi.sel.
+    13********************************************** pesmi.SEL
+    14      select pesmi assign to disk
+    15          organization is indexed
+    16          access mode is dynamic
+    17          record key is pesmi-ownkey
+    18          alternate record key is pesmi-naziv
+    19                          with duplicates
+    20          alternate record key is pesmi-verz
+    21                          with duplicates
+    22          alternate record key is pesmi-zbor-naziv =
+    23                  pesmi-zbori pesmi-naziv
+    24                          with duplicates
+    25
+    26          alternate record key is pesmi-prired-naziv =
+    27                  pesmi-prired pesmi-naziv
+    28                          with duplicates
+    29
+    30          alternate record key is pesmi-osnova-naziv =
+    31                  pesmi-osnova pesmi-naziv
+    32                          with duplicates
+    33
+    34*                alternate record key is pesmi-prired-zbori =
+    35*                 pesmi-prired pesmi-zbori pesmi-naziv
+    36*                         with duplicates
+    37
+    38          alternate record key is pesmi-prired-zbori-naziv =
+    39                  pesmi-prired pesmi-zbori pesmi-naziv
+    40                          with duplicates
+    41          alternate record key is pesmi-osnova-zbori-naziv =
+    42                  pesmi-osnova pesmi-zbori pesmi-naziv
+    43                          with duplicates
+    44          file status s-pesmi.
+    45  data division.
+    46  file section.
+*   47          copy pesmi.lib.
+    48*********************** PESMI.LIB
+    49  fd      pesmi
+    50                  label record standard
+    51                  value of file-id is '\dusan\idx\pesmi.ind'.
+    52  01      pesmi-area.
+    53          03 pesmi-ownkey.
+    54                  05      pesmi-zbori     pic 9(2).
+    55                  05      pesmi-stevilka  pic 9(5).
+    56          03 pesmi-naziv          pic x(40).
+    57          03 pesmi-prired         pic 9(6).
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page   2
+*                                   PREPES (PESMI.LIB)
+    58          03 pesmi-opomba         pic x(30).
+    59          03 pesmi-osnova         pic 9(6).
+    60          03 pesmi-verz           pic x(20).
+    61          03 pesmi-filler         pic x(19).
+    62
+    63  working-storage section.
+    64  01 progrm       pic x(30).
+    65  01 nasl         pic x(30).
+    66  01      citanih pic 9(6).
+    67  01      opomba pic x(30).
+    68  01      opomba-r1 redefines opomba.
+    69          03 opomba-7     pic x(7).
+    70          03 ostanek-1    pic x(23).
+    71  01      opomba-r2 redefines opomba.
+    72          03 opomba-4     pic x(4).
+    73          03 ostanek-2    pic x(26).
+    74  01      opomba-r3 redefines opomba.
+    75          03 opomba-6     pic x(6).
+    76          03 ostanek-3    pic x(24).
+    77  01      opomba-r4 redefines opomba.
+    78          03 opomba-9.
+    79                  05      opomba1 pic x(1).
+    80                  05      opomba2 pic x(8).
+    81          03 ostanek-4    pic x(21).
+    82  01      opomba-r5 redefines opomba.
+    83          03 opomba-otr   pic x(6).
+    84          03 ostanek-otr  pic x(24).
+*   85  copy lhspom.lib.
+    86*------------------ LHSPOM.LIB -------------------------
+    87* Pomo`na polja potrebna za vse programe, ki uporabijo
+    88* ekran za vnos podatkov ali a`uriranja.
+    89*-------------------------------------------------------
+    90* 01      E-D-N PIC 9 VALUE 1.
+    91  01      E-D-N PIC 9 VALUE 0.
+    92             88 VKLUCI-HELP VALUE 1.
+    93  78    get-character       value X"83".
+    94  78    keyboard-function   value X"B0".
+    95
+    96  01    set-key-table-func  pic 9(2) comp value 0.
+    97  01    char                pic X(1).
+    98
+    99  01 function-key-table.
+   100     03 terminator pic 9(2) comp.
+   101          88 RV-OK VALUE 0 4 10 13.
+   102          88 RV-ENTER        VALUE 0.
+   103          88 RV-potrditev    VALUE 1.
+   104          88 RV-help         VALUE 2.
+   105          88 RV-slika        VALUE 3.
+   106          88 RV-nazaj        VALUE 4.
+   107*         88 RV-listaj       VALUE 5 6.
+   108          88 RV-lissif       VALUE 5.
+   109          88 RV-lisabc       VALUE 6.
+   110*         88 RV-printaj      VALUE 7 8.
+   111          88 RV-izpsif       VALUE 7.
+   112          88 RV-izpabc       VALUE 8.
+   113          88 RV-rezer        VALUE 9.
+   114          88 RV-brisi        VALUE 10.
+   115          88 RV-ESC          VALUE 13.
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page   3
+*                                   PREPES (LHSPOM.LIB)
+   116      03  f1-sequence   pic X(3)    value X"02003B".
+   117      03  f2-sequence   pic X(3)    value X"02003C".
+   118      03  f3-sequence   pic X(3)    value X"02003D".
+   119      03  f4-sequence   pic X(3)    value X"02003E".
+   120      03  f5-sequence   pic X(3)    value X"02003F".
+   121      03  f6-sequence   pic X(3)    value X"020040".
+   122      03  f7-sequence   pic X(3)    value X"020041".
+   123      03  f8-sequence   pic X(3)    value X"020042".
+   124      03  f9-sequence   pic X(3)    value X"020043".
+   125      03  f10-sequence  pic X(3)    value X"020044".
+   126      03  f11-sequence  pic X(3)    value X"020045".
+   127      03  f12-sequence  pic X(3)    value X"020046".
+   128      03  esc-sequence  pic X(2)    value X"011B".
+   129      03  key-table-terminator  pic X(1)    value X"00".
+   130   01 crt-status.
+   131      03 crt-status-1 pic 9(1).
+   132      03 crt-status-2 pic 9(2) comp.
+   133      03 crt-status-3 pic 9.
+   134
+   135  01 DB-STAT          PIC X(2).
+   136          88 STARS VALUE "00" "02" "04" "05" "07".
+   137          88 MRNF VALUE "23".
+   138          88 DUPM VALUE "22".
+   139          88 ENDP VALUE "10".
+   140          88 HELD VALUE "9A".
+   141          88 POLN VALUE "24" "34" "44".
+   142          88 FSER VALUE "21" "30" "35" "37" "38" "39"
+   143                        "41" "42" "43" "46" "47" "48" "49".
+   144  01 DB-STAT-R REDEFINES DB-STAT.
+   145     03 DB1-STAT      PIC X(1).
+   146          88 FSER1 VALUE "9".
+   147     03 DB2-STAT      PIC X(1).
+   148
+   149  01 OKVIR-LCVD.
+   150          05 OKV-LIN PIC 99.
+   151          05 OKV-COL PIC 999.
+   152          05 OKV-VIS PIC 99.
+   153          05 OKV-DOL PIC 999.
+   154  01 OKVEMP-LCSV.
+   155          05 OKVEMP-LIN PIC 99.
+   156          05 OKVEMP-COL PIC 999.
+   157*  okvemp-siz = okv-dol + 2
+   158          05 OKVEMP-SIZ PIC 999.
+   159*  okvemp-vis = okv-lin + okv-vis + 1
+   160          05 OKVEMP-VIS PIC 99.
+   161  01   ICH PIC X.
+   162  01   WFL PIC X(60).
+   163  01   RECOVR-ZAPIS.
+   164          03 REC-DATUM PIC 9(6).
+   165          03 REC-FILE PIC X(8).
+   166          03 REC-FUN PIC X(6).
+   167          03 REC-PROGRM PIC X(7).
+   168          03 REC-ZAPIS PIC X(200).
+   169  01   FATERB-VRSTA-1.
+   170          05 FAT-PROGRM PIC X(7).
+   171          05 FILLER PIC X(9) VALUE "ERROR ON ".
+   172          05 FAT-FILE PIC X(8).
+   173          05 FILLER PIC X(12) VALUE " - STATUS = ".
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page   4
+*                                   PREPES (LHSPOM.LIB)
+   174          05 FAT-DB-STAT PIC X(4).
+   175          05 FILLER PIC X VALUE SPACE.
+   176          05 FAT-FUN PIC X(6).
+   177          05 FILLER PIC X VALUE SPACE.
+   178          05 FAT-DATE PIC 99/99/99.
+   179          05 FILLER PIC X VALUE SPACE.
+   180          05 FAT-TIME PIC X(11).
+   181  01   FATERB-VRSTA-2.
+   182          05 FILLER PIC X(9) VALUE "OWNKEY : ".
+   183          05 FAT-KEY PIC X(8).
+   184          05 FILLER PIC X VALUE SPACE.
+   185          05 FAT-AREA PIC X(60) VALUE SPACE.
+   186  01   ERR-TERMINATOR PIC X(79) VALUE " Napa~na tipka !".
+   187  01   ERR-OWNKEY     PIC X(79) VALUE " Napa~na {ifra !".
+   188  01   ERR-DATUM      PIC X(79) VALUE " Napa~en datum !".
+   189  01   ERR-TERMIN     PIC X(79) VALUE " Napa~en termin !".
+   190  01   MES-LOGIN      PIC X(79) VALUE
+   191       " Ne morete nadaljevati dela, ker se niste logirali !".
+   192
+   193  01      CAS.
+   194          03 URAMIN     PIC 9(4).
+   195          03 SEKSTO     PIC 9(4).
+   196  01      L-CAS   PIC 99.99.
+   197  01      DATUM PIC 9(6).
+   198  01      DDAT REDEFINES DATUM.
+   199          02      DL PIC 99.
+   200          02      DM PIC 99.
+   201          02      DD PIC 99.
+   202  01      L-DATUM PIC 99/99/99.
+   203  01      L1-DATUM PIC 99/99/99.
+   204  01      TD.
+   205       03    T-INDIK PIC 9.
+   206       03    T-DATUM PIC 9(8).
+   207  01      KD.
+   208       03    K-INDIK PIC 9.
+   209             88 OK-K-INDIK VALUE 1.
+   210       03    K-DATUM PIC 9(6).
+   211  01   GB-DATUM.
+   212          03 GB-DATUM-LET  PIC 9(2).
+   213          03 GB-DATUM-MES  PIC 9(2).
+   214          03 GB-DATUM-DAN  PIC 9(2).
+   215  01   GB-DATUM-R REDEFINES GB-DATUM PIC 9(6).
+   216  01   YU-DATUM.
+   217          03 YU-DATUM-DAN  PIC 9(2).
+   218          03 YU-DATUM-MES  PIC 9(2).
+   219          03 YU-DATUM-LET  PIC 9(2).
+   220  01   YU-DATUM-R REDEFINES YU-DATUM PIC 9(6).
+   221
+   222  01      OBRNJEN-DATUM.
+   223          03 DAN PIC 9(2).
+   224          03 MES PIC 9(2).
+   225          03 LET PIC 9(2).
+   226
+   227  01      PT PIC 999.
+   228  01      LIN PIC 99.
+   229  01      WS-OK     PIC 9.
+   230          88 NOT-WS-OK VALUE 0.
+   231          88 OK-WS-OK  VALUE 1.
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page   5
+*                                   PREPES (LHSPOM.LIB)
+   232  01      W-SOPERA PIC X(6) VALUE "000001".
+   233  01      WS-POTRDI PIC X.
+   234  01      WS-PUTERR PIC X(79) VALUE SPACE.
+   235  01      WS-ABUFFER PIC X(46) VALUE SPACE.
+   236  01      WS-AREA   PIC X(300) VALUE SPACE.
+   237  01      KOMANDA   PIC X(4)  VALUE "HELP".
+   238  01      STRAN     PIC 999.
+   239  01      L-STRAN   PIC ZZZ.
+   240  01      PR-STRAN  PIC X(8) VALUE "Stran   ".
+   241  01      VRSTIC    PIC 99.
+   242*****************************************************************
+   243  01      S-PESMI PIC X(2).
+   244  01      S-AVTOR PIC X(2).
+   245  01      S-PRINTP   PIC X(2).
+   246  01      S-PRINTP-R REDEFINES S-PRINTP.
+   247          03 S1-PRINTP   PIC X(1).
+   248          03 S2-PRINTP   PIC X(1).
+   249  01      S-MGOSTI   PIC X(2).
+   250  01      S-MGOSTI-R REDEFINES S-MGOSTI.
+   251          03 S1-MGOSTI   PIC X(1).
+   252          03 S2-MGOSTI   PIC X(1).
+   253  01      S-MPPART   PIC X(2).
+   254  01      S-MPOGOD   PIC X(2).
+   255  01      S-MKAPAC   PIC X(2).
+   256  01      S-MDATUM   PIC X(2).
+   257  01      S-MSIFRA   PIC X(2).
+   258  01      S-MREZER   PIC X(2).
+   259  01      S-VSIFRA   PIC X(2).
+   260  01      S-VBOOKI   PIC X(2).
+   261  01      S-CBOOKI   PIC X(2).
+   262  01      S-VAVANS   PIC X(2).
+   263  01      S-VUSLUG   PIC X(2).
+   264  01      S-VCENIK   PIC X(2).
+   265  01      S-VSTANJ   PIC X(2).
+   266  01      S-VOPISI   PIC X(2).
+   267  01      S-VOPOMB   PIC X(2).
+   268  01      S-PNAJAV   PIC X(2).
+   269  01      S-PNAPOT   PIC X(2).
+   270  01      S-PRACUN   PIC X(2).
+   271  01      S-POBRAC   PIC X(2).
+   272  01      S-MLOGIN   PIC X(2).
+   273  01      S-MTECAJ   PIC X(2).
+   274  01      S-MVALUT   PIC X(2).
+   275  01      s-mracun   PIC X(2).
+   276*****************************************************************
+   277  01      W-MPPART-VRSTA PIC 99.
+   278  01      W-MSIFRA-KONSTA PIC 99.
+   279  01      W-VSIFRA-KONSTA PIC XX.
+   280  01      W-MDATUM-DATUM.
+   281          03 W-MDATUM-LETO  PIC 9(2).
+   282          03 W-MDATUM-MESEC PIC 9(2).
+   283          03 W-MDATUM-DAN   PIC 9(2).
+   284  01      W-MDATUM-DATUM-R REDEFINES W-MDATUM-DATUM PIC 9(6).
+   285*****************************************************************
+   286  01      WS-NAZIV  PIC X(20).
+   287  01      WS-KLJUC-N15 PIC 9(15).
+   288  01      WS-KLJUC-A15 PIC X(15).
+   289  01      WS-KLJUC-A20 PIC X(20).
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page   6
+*                                   PREPES (LHSPOM.LIB)
+   290  01      WS-BUFFER-40 PIC X(40).
+   291*****************************************************************
+   292  01      LLOGIN.
+   293       02 LLOGIN-AREA.
+   294          03 LLOGIN-OWNKEY.
+   295                  05 LLOGIN-SIFRA         PIC X(6).
+   296                  05 llogin-datum         pic x(6).
+   297                  05 LLOGIN-CAS.
+   298                          07 LLOGIN-URA           PIC 9(2).
+   299                          07 LLOGIN-MIN           PIC 9(2).
+   300           05 LLOGIN-CAS-R REDEFINES LLOGIN-CAS     PIC 9(4).
+   301*-----------------------------------------------------------------
+   302          03 llogin-faterr.
+   303          05 LLOGIN-NAZIV                 PIC X(20).
+   304          05 LLOGIN-OPOMBA                PIC X(15).
+   305          05 LLOGIN-PE.
+   306                  07 LLOGIN-SIFPE         PIC 9(4).
+   307                  07 LLOGIN-SIFPM         PIC 9(2).
+   308          05 LLOGIN-PE-R  REDEFINES LLOGIN-PE      PIC 9(6).
+   309          05 LLOGIN-PE-R1 REDEFINES LLOGIN-PE.
+   310                  07 LLOGIN-EKSPOZ                 PIC 9(2).
+   311                  07 LLOGIN-PE-RED                 PIC 9(2).
+   312                  07 FILLER                        PIC X(2).
+   313          05 LLOGIN-PRIOR                 PIC X(1).
+   314          05 LLOGIN-IZPIS                 PIC X(6).
+   315          05 LLOGIN-VRSTA                 PIC 99.
+   316          05 LLOGIN-PRODOV                PIC 99.
+   317          05 LLOGIN-ENTRY                 PIC 99.
+   318          05 LLOGIN-PASSW                 PIC X(6).
+   319          05 LLOGIN-STATIS.
+   320                  07 LLOGIN-SDATUM        PIC 9(6).
+   321                  07 LLOGIN-SOPERA        PIC X(6).
+   322          05 FILLER                       PIC X(8).
+   323       02 LLOGIN-INDIK                    PIC 9(1) VALUE 0.
+   324          88 OK-LLOGIN-INDIK VALUE 1.
+   325***********************  VINKO:  ********************************
+   326  01      LISTANJE-OPIS           PIC X(40).
+   327  01      LISTANJE-OPIS-30        PIC X(30).
+   328  01      WS-BUFFER-30            PIC X(30).
+   329  01      WS-BUFFER-70            PIC X(70).
+   330  01      WS-KLJUC-A40            PIC X(40).
+   331***********************  MARKO:  ********************************
+   332  01      WS-KLJUC-N3             PIC 9(3).
+   333  01      WS-VSIF05-MPPART        PIC 9(6).
+   334*--------vinko
+   335  01      vnos-vbooki.
+   336          03      vnos-status     pic x(1).
+   337          03      vnos-stadej     pic x(1).
+   338          03      vnos-podroc     pic 9(2).
+   339          03      vnos-mppart     pic 9(6).
+   340          03      vnos-sifobj     pic 9(3).
+   341          03      vnos-tipkv1     pic x(1).
+   342          03      vnos-tipkv2     pic x(2).
+   343          03      vnos-katkva     pic x(2).
+   344          03      vnos-datod      pic 9(6).
+   345          03      vnos-datod-r redefines vnos-datod.
+   346                  07      vnos-let-od      pic 9(2).
+   347                  07      vnos-mes-od      pic 9(2).
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page   7
+*                                   PREPES (LHSPOM.LIB)
+   348                  07      vnos-dan-od      pic 9(2).
+   349          03      vnos-datdo      pic 9(6).
+   350          03      vnos-datdo-r redefines vnos-datdo.
+   351                  05      vnos-let-do      pic 9(2).
+   352                  05      vnos-mes-do      pic 9(2).
+   353                  05      vnos-dan-do      pic 9(2).
+   354          03      vnos-dodatnih.
+   355                  05      vnos-dodatne    pic x(2) occurs 10.
+   356          03      vnos-l     pic x(1).
+   357
+   358 01  default-vrednosti.
+   359     03  valobr-fix  pic 9(3).
+   360     03  valobr-dom  pic 9(3) value 890.
+   361     03  valobr-tuj  pic 9(3) value 891.
+   362     03  valobr-tpz-tuj pic 9(3) value 891.
+   363     03  drzroj-dom  pic x(2) value "YU".
+   364     03  vrsdok-dom  pic x(2) value "OI".
+   365     03  vrsdok-tuj  pic x(2) value "PL".
+   366     03  tpz pic x(6).
+   367         88 je-tpz value "   TAX" "   PRI" "   ZAV".
+   368     03  vrssto-tax  pic x(6) value "   TAX".
+   369     03  vrssto-pri  pic x(6) value "   PRI".
+   370     03  vrssto-zav  pic x(6) value "   ZAV".
+   371
+   372  01      tabela-mesecev pic x(36) value
+   373          "JANFEBMARAPRMAJJUNJULAVGSEPOKTNOVDEC".
+   374  01      tabela-mesecev-r redefines tabela-mesecev.
+   375          03      clen-mesec pic x(3) occurs 12.
+   376
+   377  01      TABELA-STATUSOV PIC X(10) VALUE "_.  #     ".
+   378  01      TABELA-STATUSOV-R REDEFINES TABELA-STATUSOV.
+   379          03      CLEN-STATUSA PIC X OCCURS 10.
+   380* 1 - prosta osnovna lezisca
+   381* 2 - prosta dodatna lezisca
+   382* 3 - rezervacije
+   383* 4 - zasedeno
+   384* 5 - racun izpisan , ni placan
+*  385  copy lhsekr.scr.
+   386*------------------ LHSEKR.LIB ----------------------------------
+   387  SCREEN SECTION.
+*  388 copy okvlis40.ss.
+   389 01 G-OKVLIS40.
+   390   02 LINE 5 COL 9 VALUE "ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+   391-"Ä¿".
+   392   02 LINE 6 COL 9 VALUE "³".
+   393   02 COL 10 BACKGROUND-COLOR 3 FOREGROUND-COLOR 0 VALUE "
+   394-"                                ".
+   395   02 COL 50 VALUE "³".
+   396   02 LINE 7 COL 9 VALUE "ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+   397-"Ä´".
+   398   02 LINE 8 COL 9 VALUE "³".
+   399   02 COL 10 BACKGROUND-COLOR 3 FOREGROUND-COLOR 0 VALUE "
+   400-"                                ".
+   401   02 COL 50 VALUE "³".
+   402   02 LINE 9 COL 9 VALUE "³".
+   403   02 COL 10 BACKGROUND-COLOR 3 FOREGROUND-COLOR 0 VALUE "
+   404-"                                ".
+   405   02 COL 50 VALUE "³".
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page   8
+*                                  PREPES (OKVLIS40.SS)
+   406   02 LINE 10 COL 9 VALUE "³".
+   407   02 COL 10 BACKGROUND-COLOR 3 FOREGROUND-COLOR 0 VALUE "
+   408-"                                ".
+   409   02 COL 50 VALUE "³".
+   410   02 LINE 11 COL 9 VALUE "³".
+   411   02 COL 10 BACKGROUND-COLOR 3 FOREGROUND-COLOR 0 VALUE "
+   412-"                                ".
+   413   02 COL 50 VALUE "³".
+   414   02 LINE 12 COL 9 VALUE "³".
+   415   02 COL 10 BACKGROUND-COLOR 3 FOREGROUND-COLOR 0 VALUE "
+   416-"                                ".
+   417   02 COL 50 VALUE "³".
+   418   02 LINE 13 COL 9 VALUE "³".
+   419   02 COL 10 BACKGROUND-COLOR 3 FOREGROUND-COLOR 0 VALUE "
+   420-"                                ".
+   421   02 COL 50 VALUE "³".
+   422   02 LINE 14 COL 9 VALUE "³".
+   423   02 COL 10 BACKGROUND-COLOR 3 FOREGROUND-COLOR 0 VALUE "
+   424-"                                ".
+   425   02 COL 50 VALUE "³".
+   426   02 LINE 15 COL 9 VALUE "³".
+   427   02 COL 10 BACKGROUND-COLOR 3 FOREGROUND-COLOR 0 VALUE "
+   428-"                                ".
+   429   02 COL 50 VALUE "³".
+   430   02 LINE 16 COL 9 VALUE "³".
+   431   02 COL 10 BACKGROUND-COLOR 3 FOREGROUND-COLOR 0 VALUE "
+   432-"                                ".
+   433   02 COL 50 VALUE "³".
+   434   02 LINE 17 COL 9 VALUE "³".
+   435   02 COL 10 BACKGROUND-COLOR 3 FOREGROUND-COLOR 0 VALUE "
+   436-"                                ".
+   437   02 COL 50 VALUE "³".
+   438   02 LINE 18 COL 9 VALUE "³".
+   439   02 COL 10 BACKGROUND-COLOR 3 FOREGROUND-COLOR 0 VALUE "
+   440-"                                ".
+   441   02 COL 50 VALUE "³".
+   442   02 LINE 19 COL 9 VALUE "³".
+   443   02 COL 10 BACKGROUND-COLOR 3 FOREGROUND-COLOR 0 VALUE "
+   444-"                                ".
+   445   02 COL 50 VALUE "³".
+   446   02 LINE 20 COL 9 VALUE "ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+   447-"ÄÄÙ".
+   448  01  GLAVA-SCREEN.
+   449          05 BLANK SCREEN
+   450                  foreground-color 7
+   451                  background-color 1.
+   452          05 LINE 1 COLUMN 1  VALUE
+   453                  "V i n k o                 "
+   454                  BACKGROUND-COLOR 5
+   455                  FOREGROUND-COLOR 2.
+   456          05 LINE 1 COLUMN 19 VALUE
+   457          "      N A S L O V I   P E S M I         "
+   458                  HIGHLIGHT
+   459                  BACKGROUND-COLOR 5
+   460                  FOREGROUND-color 6.
+   461          05 LINE 1 COLUMN 73 VALUE "SLO-2.3"
+   462                  HIGHLIGHT
+   463                  BACKGROUND-COLOR 5
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page   9
+*                                  PREPES (OKVLIS40.SS)
+   464                  FOREGROUND-color 2.
+   465          05 LINE 2 COLUMN 1 PIC X(80) USING PROGRM
+   466                  BACKGROUND-COLOR 5
+   467                  FOREGROUND-color 2.
+   468          05 LINE 2 COLUMN 21 PIC X(30) USING NASL
+   469                  HIGHLIGHT
+   470                  BACKGROUND-COLOR 5
+   471                  FOREGROUND-color 2.
+   472          05 LINE 2 COLUMN 62 VALUE " Datum: ".
+   473          05 LINE 2 COLUMN 70 PIC 99 USING DD.
+   474          05 LINE 2 COLUMN 72 VALUE ".".
+   475          05 LINE 2 COLUMN 73 PIC 99 USING DM.
+   476          05 LINE 2 COLUMN 75 VALUE ".19".
+   477          05 LINE 2 COLUMN 78 PIC 99 USING DL.
+   478
+   479          05  LINE 3 COLUMN 1 highlight
+   480         VALUE "ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+   481-              "ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ".
+   482*        VALUE "__________________________________________________
+   483*              "______________________________".
+   484
+   485          05  LINE 23 COLUMN 1 HIGHLIGHT
+   486         VALUE "ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+   487-              "ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ".
+   488*        VALUE "__________________________________________________
+   489*              "______________________________".
+   490 01  DICH LINE 25 COLUMN 79 PIC X FROM ICH TO ICH AUTO
+   491                  FOREGROUND-COLOR 4.
+   492 01  FILER LINE 25 COLUMN 10 HIGHLIGHT PIC X(60) FROM WFL
+   493                  FOREGROUND-COLOR 4.
+   494 01  L-PRINTAJ.
+   495          03 LINE 14 COLUMN 21 REVERSE-VIDEO VALUE
+   496          "                                        "
+   497                  BACKGROUND-COLOR 4
+   498                  FOREGROUND-COLOR 2.
+   499          03 LINE 15 COLUMN 21 REVERSE-VIDEO VALUE
+   500          "                                        "
+   501                  BACKGROUND-COLOR 4
+   502                  FOREGROUND-COLOR 2.
+   503          03 LINE 16 COLUMN 21 REVERSE-VIDEO VALUE
+   504          "                                        "
+   505                  BACKGROUND-COLOR 4
+   506                  FOREGROUND-COLOR 2.
+   507          03 LINE 15 COLUMN 34 BLINK HIGHLIGHT VALUE
+   508          " KREIRAM LISTO "
+   509                  BACKGROUND-COLOR 4
+   510                  FOREGROUND-COLOR 2.
+   511 01  L-DELAJ.
+   512          03 LINE 14 COLUMN 21 REVERSE-VIDEO VALUE
+   513          "                                        "
+   514                  BACKGROUND-COLOR 4
+   515                  FOREGROUND-COLOR 2.
+   516          03 LINE 15 COLUMN 21 REVERSE-VIDEO VALUE
+   517          "                                        "
+   518                  BACKGROUND-COLOR 4
+   519                  FOREGROUND-COLOR 2.
+   520          03 LINE 16 COLUMN 21 REVERSE-VIDEO VALUE
+   521          "                                        "
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page  10
+*                                  PREPES (OKVLIS40.SS)
+   522                  BACKGROUND-COLOR 4
+   523                  FOREGROUND-COLOR 2.
+   524          03 LINE 15 COLUMN 34 BLINK HIGHLIGHT VALUE
+   525          "     DELAM     "
+   526                  BACKGROUND-COLOR 4
+   527                  FOREGROUND-COLOR 2.
+   528  01      L-POTRDI.
+   529       03 LINE 25 COLUMN 37 VALUE
+   530          "  <F1> ali <D> = Potrditev zapisa  "
+   531                  HIGHLIGHT
+   532                  FOREGROUND-COLOR 2.
+   533       03 LINE 25 COLUMN 75  PIC X USING ws-potrdi AUTO
+   534                  FOREGROUND-COLOR 7.
+   535  01      L-BRISI.
+   536       03 LINE 25 COLUMN 37 VALUE
+   537          "  <F1> ali <D> = Potrditev brisanja"
+   538                  HIGHLIGHT
+   539                  FOREGROUND-COLOR 2.
+   540       03 LINE 25 COLUMN 75  PIC X USING ws-potrdi AUTO
+   541                  FOREGROUND-COLOR 7.
+   542  01      L-PUTERR.
+   543       03 LINE 25 COLUMN 1 PIC X(79) USING ws-PUTERR AUTO
+   544                  HIGHLIGHT
+   545                  FOREGROUND-COLOR 2.
+   546  01      L-KARKOLI.
+   547       03 LINE 25 COLUMN 37 VALUE "  Pritisni katerokoli tipko  "
+   548                  HIGHLIGHT
+   549                  FOREGROUND-COLOR 2.
+   550       03 LINE 25 COLUMN 75  PIC X USING ws-potrdi AUTO
+   551                  FOREGROUND-COLOR 7.
+   552 01 HELP-SCREEN.
+   553     03 LINE 7 COLUMN 42 REVERSE-VIDEO VALUE
+   554          "       POMEN FUNKCIJSKIH TIPK       "
+   555                  FOREGROUND-COLOR 3
+   556                  BACKGROUND-COLOR 5.
+   557     03 LINE 8 COLUMN 42 VALUE
+   558          "                                    "
+   559                  FOREGROUND-COLOR 1
+   560                  BACKGROUND-COLOR 5.
+   561     03 LINE 9 COLUMN 42 HIGHLIGHT VALUE " ESC "
+   562                  FOREGROUND-COLOR 1
+   563                  BACKGROUND-COLOR 3.
+   564     03 LINE 9 COLUMN 47 VALUE
+   565          "- Skok na zacetek,             "
+   566                  FOREGROUND-COLOR 1
+   567                  BACKGROUND-COLOR 5.
+   568     03 LINE 10 COLUMN 42 VALUE
+   569          "       ponovni ESC - konec          "
+   570                  FOREGROUND-COLOR 1
+   571                  BACKGROUND-COLOR 5.
+   572     03 LINE 11 COLUMN 42 HIGHLIGHT VALUE " F1  "
+   573                  FOREGROUND-COLOR 1
+   574                  BACKGROUND-COLOR 3.
+   575     03 LINE 11 COLUMN 47 VALUE
+   576          "- Potrditev                    "
+   577                  FOREGROUND-COLOR 1
+   578                  BACKGROUND-COLOR 5.
+   579     03 LINE 12 COLUMN 42 HIGHLIGHT VALUE " F2  "
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page  11
+*                                  PREPES (OKVLIS40.SS)
+   580                  FOREGROUND-COLOR 1
+   581                  BACKGROUND-COLOR 3.
+   582     03 LINE 12 COLUMN 47 VALUE
+   583          "- Kratka pomoc pri polju,      "
+   584                  FOREGROUND-COLOR 1
+   585                  BACKGROUND-COLOR 5.
+   586     03 LINE 13 COLUMN 42 VALUE
+   587          "       na katerem je kurzor         "
+   588                  FOREGROUND-COLOR 1
+   589                  BACKGROUND-COLOR 5.
+   590     03 LINE 14 COLUMN 42 HIGHLIGHT VALUE " F3  "
+   591                  FOREGROUND-COLOR 1
+   592                  BACKGROUND-COLOR 3.
+   593     03 LINE 14 COLUMN 47 VALUE
+   594          "- Prikaz te slike              "
+   595                  FOREGROUND-COLOR 1
+   596                  BACKGROUND-COLOR 5.
+   597     03 LINE 15 COLUMN 42 HIGHLIGHT VALUE " F4  "
+   598                  FOREGROUND-COLOR 1
+   599                  BACKGROUND-COLOR 3.
+   600     03 LINE 15 COLUMN 47 VALUE
+   601          "- Polje nazaj                  "
+   602                  FOREGROUND-COLOR 1
+   603                  BACKGROUND-COLOR 5.
+   604     03 LINE 16 COLUMN 42 HIGHLIGHT VALUE " F5  "
+   605                  FOREGROUND-COLOR 1
+   606                  BACKGROUND-COLOR 3.
+   607     03 LINE 16 COLUMN 47 VALUE
+   608          "- Listanje po {ifri            "
+   609                  FOREGROUND-COLOR 1
+   610                  BACKGROUND-COLOR 5.
+   611     03 LINE 17 COLUMN 42 HIGHLIGHT VALUE " F6  "
+   612                  FOREGROUND-COLOR 1
+   613                  BACKGROUND-COLOR 3.
+   614     03 LINE 17 COLUMN 47 VALUE
+   615          "- Listanje po nazivu           "
+   616                  FOREGROUND-COLOR 1
+   617                  BACKGROUND-COLOR 5.
+   618     03 LINE 18 COLUMN 42 HIGHLIGHT VALUE " F7  "
+   619                  FOREGROUND-COLOR 1
+   620                  BACKGROUND-COLOR 3.
+   621     03 LINE 18 COLUMN 47 VALUE
+   622          "- Izpis po {ifri               "
+   623                  FOREGROUND-COLOR 1
+   624                  BACKGROUND-COLOR 5.
+   625     03 LINE 19 COLUMN 42 HIGHLIGHT VALUE " F8  "
+   626                  FOREGROUND-COLOR 1
+   627                  BACKGROUND-COLOR 3.
+   628     03 LINE 19 COLUMN 47 VALUE
+   629          "- Izpis po nazivu              "
+   630                  FOREGROUND-COLOR 1
+   631                  BACKGROUND-COLOR 5.
+   632     03 LINE 20 COLUMN 42 HIGHLIGHT VALUE " F9  "
+   633                  FOREGROUND-COLOR 1
+   634                  BACKGROUND-COLOR 3.
+   635     03 LINE 20 COLUMN 47 VALUE
+   636          "- Samo aktivna slika           "
+   637                  FOREGROUND-COLOR 1
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page  12
+*                                  PREPES (OKVLIS40.SS)
+   638                  BACKGROUND-COLOR 5.
+   639     03 LINE 21 COLUMN 42 HIGHLIGHT VALUE " F10 "
+   640                  FOREGROUND-COLOR 1
+   641                  BACKGROUND-COLOR 3.
+   642     03 LINE 21 COLUMN 47 VALUE
+   643          "- Brisanje obstojecega zapisa  "
+   644                  FOREGROUND-COLOR 1
+   645                  BACKGROUND-COLOR 5.
+   646********************************************************
+   647 01 L-WS-OKVEMP LINE OKVEMP-LIN COL OKVEMP-COL SIZE OKVEMP-SIZ
+   648         VALUE "
+   649-              "                                "
+   650          BACKGROUND-COLOR 0
+   651          FOREGROUND-COLOR 1.
+   652*************************************************************
+   653 01 L-NAZIV-20.
+   654       03 LINE 25 COLUMN 7 VALUE " Vnesi naziv : "
+   655                  HIGHLIGHT
+   656                  FOREGROUND-COLOR 3.
+   657       03 LINE 25 COLUMN 25  PIC X(20) USING WS-NAZIV AUTO
+   658                  FOREGROUND-COLOR 3.
+   659 01 L-KLJUC-N6.
+   660       03 LINE 25 COLUMN 7 VALUE " Vnesi {ifro : "
+   661                  HIGHLIGHT
+   662                  FOREGROUND-COLOR 3.
+   663       03 LINE 25 COLUMN 25  PIC Z(6) USING WS-KLJUC-N15 AUTO
+   664                  FOREGROUND-COLOR 3.
+   665 01 L-KLJUC-A6.
+   666       03 LINE 25 COLUMN 7 VALUE " Vnesi {ifro : "
+   667                  HIGHLIGHT
+   668                  FOREGROUND-COLOR 3.
+   669       03 LINE 25 COLUMN 25  PIC X(6) USING WS-KLJUC-A15 AUTO
+   670                  FOREGROUND-COLOR 3.
+   671 01 L-KLJUC-A15.
+   672       03 LINE 25 COLUMN 7 VALUE " Vnesi {ifro : "
+   673                  HIGHLIGHT
+   674                  FOREGROUND-COLOR 3.
+   675       03 LINE 25 COLUMN 25  PIC X(15) USING WS-KLJUC-N15 AUTO
+   676                  FOREGROUND-COLOR 3.
+   677 01 L-KLJUC-A20.
+   678       03 LINE 25 COLUMN 7 VALUE " Vnesi {ifro : "
+   679                  HIGHLIGHT
+   680                  FOREGROUND-COLOR 3.
+   681       03 LINE 25 COLUMN 25  PIC X(20) USING WS-KLJUC-A20 AUTO
+   682                  FOREGROUND-COLOR 3.
+   683 01 L-KLJUC-A40.
+   684       03 LINE 25 COLUMN 7 VALUE " Vnesi {ifro : "
+   685                  HIGHLIGHT
+   686                  FOREGROUND-COLOR 3.
+   687       03 LINE 25 COLUMN 25  PIC X(40) USING WS-KLJUC-A40 AUTO
+   688                  FOREGROUND-COLOR 3.
+   689
+   690 01 LISTANJE-40.
+   691       03 LINE 6 COLUMN 40 REVERSE-VIDEO
+   692        VALUE "               LISTANJE                 "
+   693                  BACKGROUND-color 5
+   694                  FOREGROUND-COLOR 3.
+   695
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page  13
+*                                  PREPES (OKVLIS40.SS)
+   696 01 L-WS-BUFFER-40 VALUE
+   697              "                                        "
+   698          BACKGROUND-COLOR 0
+   699          FOREGROUND-COLOR 3.
+   700
+   701  01 LISTANJE-NASLOV LINE 7 COLUMN 40
+   702                  PIC X(40) USING LISTANJE-OPIS
+   703                  UNDERLINE
+   704                  BACKGROUND-COLOR 0
+   705                  FOREGROUND-COLOR 3.
+   706 01 LISTANJE-30.
+   707       03 LINE 6 COLUMN 50 REVERSE-VIDEO
+   708        VALUE "          LISTANJE            "
+   709                  BACKGROUND-color 5
+   710                  FOREGROUND-COLOR 3.
+   711
+   712 01 L-WS-BUFFER-30 VALUE
+   713              "                              "
+   714          BACKGROUND-COLOR 0
+   715          FOREGROUND-COLOR 3.
+   716
+   717  01 LISTANJE-NASLOV-30 LINE 7 COLUMN 50
+   718                  PIC X(30) USING LISTANJE-OPIS-30
+   719                  UNDERLINE
+   720                  BACKGROUND-COLOR 0
+   721                  FOREGROUND-COLOR 3.
+   722*------MARE
+   723 01 L-KLJUC-N3.
+   724       03 LINE 25 COLUMN 7 VALUE " Vnesi {ifro : "
+   725                  HIGHLIGHT
+   726                  FOREGROUND-COLOR 3.
+   727       03 LINE 25 COLUMN 25  PIC Z(3) USING WS-KLJUC-N3 AUTO
+   728                  FOREGROUND-COLOR 3.
+   729  procedure division.
+   730  odpri.
+   731          open i-o pesmi.
+   732          move zero to pesmi-ownkey
+   733          start pesmi key not < pesmi-ownkey invalid key
+   734                  display "napaka-start"
+   735                  go zapri.
+   736  prenesi.
+   737          READ PESMI NEXT RECORD
+   738                  AT END GO ZAPRI.
+   739
+   740*         if pesmi-zbori = 4 go prenesi.
+   741
+   742          add 1 to citanih
+   743          display "citanih " citanih
+   744          move pesmi-opomba to opomba
+   745
+   746*         if opomba-7 = "ZA MLPZ"
+   747*                 delete pesmi
+   748*                 move 4 to pesmi-zbori
+   749*                 move ostanek-1 to pesmi-opomba
+   750*                 WRITE PESMI-AREA
+   751*                 go prenesi.
+   752
+   753*         if opomba-4 = "MLPZ"
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010 27-Mar-99 11:58 Page  14
+*                                        PREPES
+   754*                 delete pesmi
+   755*                 move 4 to pesmi-zbori
+   756*                 move ostanek-2 to pesmi-opomba
+   757*                 WRITE PESMI-AREA
+   758*                 go prenesi.
+   759
+   760*         if opomba-6 = "GRLICA"
+   761*                 delete pesmi
+   762*                 move 4 to pesmi-zbori
+   763*                 WRITE PESMI-AREA
+   764*                 go prenesi.
+   765
+   766*         if      opomba-9 = "MLADINSKI" or
+   767*                 opomba-9 = "LEPO JE V"
+   768*                         delete pesmi
+   769*                         move 4 to pesmi-zbori
+   770*                         WRITE PESMI-AREA
+   771*                         go prenesi.
+   772
+   773*         if      opomba-9 = "0tro{ki i"
+   774*                         delete pesmi
+   775*                         move 4 to pesmi-zbori
+   776*                         move "O" to opomba1
+   777*                         move opomba-r4 to pesmi-opomba
+   778*                         WRITE PESMI-AREA
+   779*                         go prenesi.
+   780
+   781*         if      opomba-9 = "Pesmi za "
+   782*                         delete pesmi
+   783*                         move 4 to pesmi-zbori
+   784*                         WRITE PESMI-AREA
+   785*                         go prenesi.
+   786
+   787          if      opomba-otr = "ZA OPZ"
+   788                          delete pesmi
+   789                          move 5 to pesmi-zbori
+   790                          WRITE PESMI-AREA
+   791                          go prenesi.
+   792
+   793          go prenesi.
+   794  zapri.
+   795          close pesmi
+   796          stop run.
+   797
+* Micro Focus VS COBOL V2.0.2        L2.0 revision 010
+* COPYRIGHT (C) 1985,1987 Micro Focus Ltd.     URN VXEPA/AA0/01113R
+*                                              REF GNB-064047010A3
+*
+* Total Messages:     0
+* Data:        8584     Code:         749     Dictionary:       21686

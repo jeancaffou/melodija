@@ -1,0 +1,8 @@
+      ********************************************** AVTOR.SEL
+            SELECT AVTOR ASSIGN TO DISK
+                ORGANIZATION IS INDEXED
+                ACCESS MODE IS DYNAMIC
+                RECORD KEY IS AVTOR-OWNKEY
+                ALTERNATE RECORD KEY IS AVTOR-NAZIV
+			WITH DUPLICATES
+                FILE STATUS S-AVTOR.

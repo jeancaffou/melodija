@@ -1,0 +1,9 @@
+      *********************** zbori.lib
+        fd      zbori
+                        label record standard
+                        value of file-id is '\dusan\idx\zbori.ind'.
+        01      zbori-area.
+                03 zbori-ownkey		pic 9(2).
+                03 zbori-naziv		pic x(20).
+                03 zbori-krnaz		pic x(5).
+                03 zbori-filler		pic x(23).

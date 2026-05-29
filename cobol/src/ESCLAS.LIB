@@ -1,0 +1,12 @@
+      *        01 glava-bold pic x(78) value "G".
+      *        01 glava-draft pic x(80) value "H".
+
+	01	g-bold	pic x(50) value "(s3B".
+	01	g-draft pic x(50) value "(s-3B".
+	01	g-black	pic x(50) value "(s7B".
+	01	g-thin	pic x(50) value "(s-7B".
+
+	01	g-normal	pic x(50) value "&k0S".
+	01	g-compress	pic x(50) value "&k2S".
+	01	g-elite		pic x(50) value "&k4S".
+

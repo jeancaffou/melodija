@@ -1,0 +1,1 @@
+cobol run %1

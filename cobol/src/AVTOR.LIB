@@ -1,0 +1,12 @@
+      *********************** avtor.lib
+        fd      avtor
+                        label record standard
+                        value of file-id is '\dusan\idx\avtor.ind'.
+        01      avtor-area.
+                03 avtor-ownkey		pic 9(6).
+                03 avtor-naziv		pic x(20).
+		03 avtor-koliko		pic 9(6).
+                03 avtor-vrsta		pic 9(1).
+			88 ok-vrsta value 1 2.
+                03 avtor-filler		pic x(31).
+

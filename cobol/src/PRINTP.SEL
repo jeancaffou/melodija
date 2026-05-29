@@ -1,0 +1,4 @@
+      ********************************************** printp.SEL
+                SELECT PRINTP ASSIGN TO DISK
+                        ORGANIZATION IS LINE SEQUENTIAL
+                        FILE STATUS S-PRINTP.

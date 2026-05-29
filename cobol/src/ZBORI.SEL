@@ -1,0 +1,8 @@
+      ********************************************** ZBORI.SEL
+            SELECT ZBORI ASSIGN TO DISK
+                ORGANIZATION IS INDEXED
+                ACCESS MODE IS DYNAMIC
+                RECORD KEY IS ZBORI-OWNKEY
+                ALTERNATE RECORD KEY IS ZBORI-NAZIV
+			WITH DUPLICATES
+                FILE STATUS S-ZBORI.

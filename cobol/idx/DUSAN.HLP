@@ -1,0 +1,84 @@
+      *********************************************************
+      * dusan.hlp
+      *********************************************************
+	01 li-sifran pic x(38) value " Listanje {ifranta ".
+	01 m-sifran-naslov	pic x(50).
+	01 m-sifran-glava	pic x(132).
+	01 w-sifrannaziv	pic x(15).
+	01 sifranti-nazivi.
+		03	storit-naziv1	pic x(20).
+
+      *---- avtor
+        01 H-AVTOR-OWNKEY PIC X(79) VALUE
+	   "Vnesi {ifro avtorja !".
+        01 H-AVTOR-NAZIV PIC X(79) VALUE
+	   "Vnesi priimek in ime avtorja !".
+        01 H-AVTOR-VRSTA PIC X(79) VALUE
+	   "1-avtor glasbe, 2-avtor teksta ".
+	01	li-avtor pic x(38) value " Avtorji ".
+	01 M-AVTOR-NASLOV	PIC X(50) VALUE
+	"                 A V T O R J I                    ".
+	01 M-AVTOR-GLAVA.
+		03 FILLER  PIC X(40) VALUE
+		"   {t. naziv                            ".
+		03 FILLER  PIC X(40) VALUE SPACE.
+		03 FILLER  PIC X(35) VALUE SPACE.
+        01 H-VRSTA-IZPISA PIC X(79) VALUE
+	   "Vnesi vrsto seznama : 1-abecedni 2-po {ifri !".
+
+      *---- pesmi
+        01 H-PESMI-ZBOR PIC X(79) VALUE
+	   "Vnesi zbor : 1-MOPZ, 2-@EPZ, 3-MEPZ, 4-MLPZ, 5-OPZ !".
+        01 H-PESMI-STEVILKA PIC X(79) VALUE
+	   "Vnesi {ifro pesmi !".
+        01 H-PESMI-NAZIV PIC X(79) VALUE
+	   "Vnesi naziv pesmi !".
+        01 H-PESMI-VERZ PIC X(79) VALUE
+	   "Vnesi za~etni verz pesmi !".
+        01 H-PESMI-PRIRED PIC X(79) VALUE
+	   "Vnesi {ifro skladatelja !".
+        01 H-PESMI-OSNOVA PIC X(79) VALUE
+	   "Vnesi {ifro avtorja !".
+        01 H-PESMI-OPOMBA PIC X(79) VALUE
+	   "Vnesi opombo k pesmi !".
+	01	li-pesmi  pic x(58) value " Skladbe - zbor".
+	01	li-pesver pic x(58) value " Skladbe po za~. verzu ".
+	01	li-pespri pic x(58) value " Skladbe - priredil".
+	01	li-pesosn pic x(58) value " Skladbe - pesnik".
+	01 M-PESMI-NASLOV	PIC X(50) VALUE
+	"                S K L A D B E                     ".
+	01 M-PESMI-GLAVA.
+		03 FILLER  PIC X(40) VALUE
+		"   {t. naziv                            ".
+		03 FILLER  PIC X(40) VALUE SPACE.
+		03 FILLER  PIC X(35) VALUE SPACE.
+
+      *---- zbori
+        01 H-ZBORI-OWNKEY PIC X(79) VALUE
+	   "Vnesi {ifro zbora !".
+        01 H-ZBORI-NAZIV PIC X(79) VALUE
+	   "Vnesi naziv zbora !".
+        01 H-ZBORI-KRNAZ PIC X(79) VALUE
+	   "Vnesi kratko oznako zbora !".
+	01	li-zbori pic x(38) value " Zbori ".
+	01 M-ZBORI-NASLOV	PIC X(50) VALUE
+	"                   Z B O R I                      ".
+	01 M-ZBORI-GLAVA.
+		03 FILLER  PIC X(40) VALUE
+		"   {t. naziv                            ".
+		03 FILLER  PIC X(40) VALUE SPACE.
+		03 FILLER  PIC X(35) VALUE SPACE.
+
+      *---- zbirka
+        01 H-ZBIRKA-OWNKEY PIC X(79) VALUE
+	   "Vnesi {ifro vira !".
+        01 H-ZBIRKA-NAZIV PIC X(79) VALUE
+	   "Vnesi naziv vira !".
+	01	li-zbirka pic x(38) value " Viri ".
+	01 M-ZBIRKA-NASLOV	PIC X(50) VALUE
+	"                   V I R I                        ".
+	01 M-ZBIRKA-GLAVA.
+		03 FILLER  PIC X(40) VALUE
+		"   {t. naziv                            ".
+		03 FILLER  PIC X(40) VALUE SPACE.
+		03 FILLER  PIC X(35) VALUE SPACE.

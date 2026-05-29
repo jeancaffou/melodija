@@ -1,0 +1,56 @@
+      *********************************************************
+      * DUS000.LIB
+      *********************************************************
+        01      NASL PIC X(30) VALUE "    Vzdr`evanje  [IFRANTOV    ".
+        01      POGLAVJE PIC X(8) VALUE "[IFRANTI".
+
+	01	H-ZBOR	PIC X(79) VALUE
+	" zbor : 1-mo{ki, 2-`enski, 3-me{ani, 4-mladinski, 5-otro{ki ".
+
+      * polja za izpis na tiskalnik ***************************
+
+        01      W-NAZIVI-SIFRANTOV.
+                03 W-DUS001-SIF PIC X(50) VALUE
+        "         S E Z N A M    A V T O R J E V           ".
+                03 W-DUS002-SIF PIC X(50) VALUE
+        "   S K L A D B A  -  A V T O R                    ".
+                03 W-DUS003-SIF PIC X(50) VALUE
+        "   A V T O R   -  S K L A D B E                   ".
+        01      W-NAZIVI-SIFRANTOV-R REDEFINES W-NAZIVI-SIFRANTOV.
+                03 M-PRMSIF00-NASLOV	PIC X(50) OCCURS 3.
+
+        01      W-GLAVE-SIFRANTOV.
+                03 M-PRMSIF01-GLAVA.
+                        05      FILLER  PIC X(40) VALUE
+                        "          [ifra  Naziv                  ".
+                        05      FILLER  PIC X(40) VALUE SPACE.
+                03 M-PRMSIF02-GLAVA.
+                        05      FILLER  PIC X(40) VALUE
+                        "          Skladba                       ".
+                        05      FILLER  PIC X(40) VALUE
+                        "           Avtor                        ".
+                03 M-PRMSIF03-GLAVA.
+                        05      FILLER  PIC X(40) VALUE
+                        "          Avtor / Skladba               ".
+                        05      FILLER  PIC X(40) VALUE SPACE.
+
+        01      W-GLAVE-SIFRANTOV-R REDEFINES W-GLAVE-SIFRANTOV.
+                03 M-PRMSIF00-GLAVA	PIC X(80) OCCURS 3.
+
+        01      POLJA-ZA-IZPIS-STEVILK.
+                03      W-STEV-3-0      PIC Z(3).
+                03      W-STEV-5-0      PIC Z(5).
+                03      W-STEV-6-0      PIC Z(6).
+	01	W-KONSTA	PIC 9(1).
+	01	TABELA-ZBOROV VALUE "MOPZ  @EPZ  MEPZ  MLPZ  OPZ   ".
+		03 PESMI-ZBORNAZ-CLEN	PIC X(6) OCCURS 5.
+	01	PESMI-ZBORNAZ	PIC X(6).
+	01	AVTOR-ZBOR	PIC 9(1).
+	01	ZNAK-OLD	PIC X(1).
+	01	ZNAK-NEW	PIC X(1).
+	01	ZBOR-OLD	PIC 9(1).
+	01	ZBOR-NEW	PIC 9(1).
+	01	KOLIKO-PESMI	PIC 9(3).
+	01	STEVC		PIC 9(6).
+	01	ws-zbor		pic 9(1).
+	01	ws-avtor	pic 9(6).

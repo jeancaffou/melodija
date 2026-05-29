@@ -1,0 +1,15 @@
+        01 glava-bold pic x(80) value "G".
+        01 glava-draft pic x(80) value "H".
+        01 glava-prepogni.
+		03 fill	pic x(2) value "--".
+		03 fill	pic x(76) value space.
+		03 fill	pic x(2) value "--".
+        01 glava-sp pic x(80) value space.
+        01 glava-crte pic x(80) value all "-".
+        01 glava-crted1.
+           03 fill pic x(32) value space.
+           03 fill pic x(48) value all "-".
+        01 glava-skupaj.
+           03 fill pic x(2) value space.
+           03 fill pic x(7) value "vseh : ".
+           03 vseh-skupaj	pic z(6).

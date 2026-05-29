@@ -1,0 +1,8 @@
+      ********************************************** ZBIRKA.SEL
+            SELECT ZBIRKA ASSIGN TO DISK
+                ORGANIZATION IS INDEXED
+                ACCESS MODE IS DYNAMIC
+                RECORD KEY IS ZBIRKA-OWNKEY
+                ALTERNATE RECORD KEY IS ZBIRKA-NAZIV
+			WITH DUPLICATES
+                FILE STATUS S-ZBIRKA.

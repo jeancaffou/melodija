@@ -1,0 +1,299 @@
+      *------------------ LHSPOM.LIB -------------------------
+      * Pomo`na polja potrebna za vse programe, ki uporabijo
+      * ekran za vnos podatkov ali a`uriranja.
+      *-------------------------------------------------------
+      * 01      E-D-N PIC 9 VALUE 1.
+        01      E-D-N PIC 9 VALUE 0.
+                   88 VKLUCI-HELP VALUE 1.
+        78    get-character       value X"83".
+        78    keyboard-function   value X"B0".
+
+        01    set-key-table-func  pic 9(2) comp value 0.
+        01    char                pic X(1).
+
+        01 function-key-table.
+           03 terminator pic 9(2) comp.
+                88 RV-OK VALUE 0 4 10 13.
+                88 RV-ENTER        VALUE 0.
+                88 RV-potrditev    VALUE 1.
+                88 RV-help         VALUE 2.
+                88 RV-slika        VALUE 3.
+                88 RV-nazaj        VALUE 4.
+      *         88 RV-listaj       VALUE 5 6.
+                88 RV-lissif       VALUE 5.
+                88 RV-lisabc       VALUE 6.
+      *         88 RV-printaj      VALUE 7 8.
+                88 RV-izpsif       VALUE 7.
+                88 RV-izpabc       VALUE 8.
+                88 RV-rezer        VALUE 9.
+                88 RV-brisi        VALUE 10.
+                88 RV-ESC          VALUE 13.
+            03  f1-sequence   pic X(3)    value X"02003B".
+            03  f2-sequence   pic X(3)    value X"02003C".
+            03  f3-sequence   pic X(3)    value X"02003D".
+            03  f4-sequence   pic X(3)    value X"02003E".
+            03  f5-sequence   pic X(3)    value X"02003F".
+            03  f6-sequence   pic X(3)    value X"020040".
+            03  f7-sequence   pic X(3)    value X"020041".
+            03  f8-sequence   pic X(3)    value X"020042".
+            03  f9-sequence   pic X(3)    value X"020043".
+            03  f10-sequence  pic X(3)    value X"020044".
+            03  f11-sequence  pic X(3)    value X"020045".
+            03  f12-sequence  pic X(3)    value X"020046".
+            03  esc-sequence  pic X(2)    value X"011B".
+            03  key-table-terminator  pic X(1)    value X"00".
+         01 crt-status.
+            03 crt-status-1 pic 9(1).
+            03 crt-status-2 pic 9(2) comp.
+            03 crt-status-3 pic 9.
+
+        01 DB-STAT          PIC X(2).
+                88 STARS VALUE "00" "02" "04" "05" "07".
+                88 MRNF VALUE "23".
+                88 DUPM VALUE "22".
+                88 ENDP VALUE "10".
+                88 HELD VALUE "9A".
+                88 POLN VALUE "24" "34" "44".
+                88 FSER VALUE "21" "30" "35" "37" "38" "39"
+                              "41" "42" "43" "46" "47" "48" "49".
+        01 DB-STAT-R REDEFINES DB-STAT.
+           03 DB1-STAT      PIC X(1).
+                88 FSER1 VALUE "9".
+           03 DB2-STAT      PIC X(1).
+
+        01 OKVIR-LCVD.
+                05 OKV-LIN PIC 99.
+                05 OKV-COL PIC 999.
+                05 OKV-VIS PIC 99.
+                05 OKV-DOL PIC 999.
+        01 OKVEMP-LCSV.
+                05 OKVEMP-LIN PIC 99.
+                05 OKVEMP-COL PIC 999.
+      *  okvemp-siz = okv-dol + 2
+                05 OKVEMP-SIZ PIC 999.
+      *  okvemp-vis = okv-lin + okv-vis + 1
+                05 OKVEMP-VIS PIC 99.
+        01   ICH PIC X.
+        01   WFL PIC X(60).
+        01   RECOVR-ZAPIS.
+                03 REC-DATUM PIC 9(6).
+                03 REC-FILE PIC X(8).
+                03 REC-FUN PIC X(6).
+                03 REC-PROGRM PIC X(7).
+                03 REC-ZAPIS PIC X(200).
+        01   FATERB-VRSTA-1.
+                05 FAT-PROGRM PIC X(7).
+                05 FILLER PIC X(9) VALUE "ERROR ON ".
+                05 FAT-FILE PIC X(8).
+                05 FILLER PIC X(12) VALUE " - STATUS = ".
+                05 FAT-DB-STAT PIC X(4).
+                05 FILLER PIC X VALUE SPACE.
+                05 FAT-FUN PIC X(6).
+                05 FILLER PIC X VALUE SPACE.
+                05 FAT-DATE PIC 99/99/99.
+                05 FILLER PIC X VALUE SPACE.
+                05 FAT-TIME PIC X(11).
+        01   FATERB-VRSTA-2.
+                05 FILLER PIC X(9) VALUE "OWNKEY : ".
+                05 FAT-KEY PIC X(8).
+                05 FILLER PIC X VALUE SPACE.
+                05 FAT-AREA PIC X(60) VALUE SPACE.
+        01   ERR-TERMINATOR PIC X(79) VALUE " Napa~na tipka !".
+        01   ERR-OWNKEY     PIC X(79) VALUE " Napa~na {ifra !".
+        01   ERR-DATUM      PIC X(79) VALUE " Napa~en datum !".
+        01   ERR-TERMIN     PIC X(79) VALUE " Napa~en termin !".
+        01   MES-LOGIN      PIC X(79) VALUE
+             " Ne morete nadaljevati dela, ker se niste logirali !".
+
+        01      CAS.
+                03 URAMIN     PIC 9(4).
+                03 SEKSTO     PIC 9(4).
+        01      L-CAS   PIC 99.99.
+        01      DATUM PIC 9(6).
+        01      DDAT REDEFINES DATUM.
+                02      DL PIC 99.
+                02      DM PIC 99.
+                02      DD PIC 99.
+        01      L-DATUM PIC 99/99/99.
+        01      L1-DATUM PIC 99/99/99.
+        01      TD.
+             03    T-INDIK PIC 9.
+             03    T-DATUM PIC 9(8).
+        01      KD.
+             03    K-INDIK PIC 9.
+                   88 OK-K-INDIK VALUE 1.
+             03    K-DATUM PIC 9(6).
+        01   GB-DATUM.
+                03 GB-DATUM-LET  PIC 9(2).
+                03 GB-DATUM-MES  PIC 9(2).
+                03 GB-DATUM-DAN  PIC 9(2).
+        01   GB-DATUM-R REDEFINES GB-DATUM PIC 9(6).
+        01   YU-DATUM.
+                03 YU-DATUM-DAN  PIC 9(2).
+                03 YU-DATUM-MES  PIC 9(2).
+                03 YU-DATUM-LET  PIC 9(2).
+        01   YU-DATUM-R REDEFINES YU-DATUM PIC 9(6).
+
+        01      OBRNJEN-DATUM.
+                03 DAN PIC 9(2).
+                03 MES PIC 9(2).
+                03 LET PIC 9(2).
+
+        01      PT PIC 999.
+        01      LIN PIC 99.
+        01      WS-OK     PIC 9.
+                88 NOT-WS-OK VALUE 0.
+                88 OK-WS-OK  VALUE 1.
+        01      W-SOPERA PIC X(6) VALUE "000001".
+        01      WS-POTRDI PIC X.
+        01      WS-PUTERR PIC X(79) VALUE SPACE.
+        01      WS-ABUFFER PIC X(46) VALUE SPACE.
+        01      WS-AREA   PIC X(300) VALUE SPACE.
+        01      KOMANDA   PIC X(4)  VALUE "HELP".
+        01      STRAN     PIC 999.
+        01      L-STRAN   PIC ZZZ.
+        01      PR-STRAN  PIC X(8) VALUE "Stran   ".
+        01      VRSTIC    PIC 99.
+      *****************************************************************
+        01      S-PESMI	PIC X(2).
+        01      S-AVTOR	PIC X(2).
+        01      S-PRINTP   PIC X(2).
+        01      S-PRINTP-R REDEFINES S-PRINTP.
+                03 S1-PRINTP   PIC X(1).
+                03 S2-PRINTP   PIC X(1).
+        01      S-MGOSTI   PIC X(2).
+        01      S-MGOSTI-R REDEFINES S-MGOSTI.
+                03 S1-MGOSTI   PIC X(1).
+                03 S2-MGOSTI   PIC X(1).
+        01      S-MPPART   PIC X(2).
+        01      S-MPOGOD   PIC X(2).
+        01      S-MKAPAC   PIC X(2).
+        01      S-MDATUM   PIC X(2).
+        01      S-MSIFRA   PIC X(2).
+        01      S-MREZER   PIC X(2).
+        01      S-VSIFRA   PIC X(2).
+        01      S-VBOOKI   PIC X(2).
+        01      S-CBOOKI   PIC X(2).
+        01      S-VAVANS   PIC X(2).
+        01      S-VUSLUG   PIC X(2).
+        01      S-VCENIK   PIC X(2).
+        01      S-VSTANJ   PIC X(2).
+        01      S-VOPISI   PIC X(2).
+        01      S-VOPOMB   PIC X(2).
+        01      S-PNAJAV   PIC X(2).
+        01      S-PNAPOT   PIC X(2).
+        01      S-PRACUN   PIC X(2).
+        01      S-POBRAC   PIC X(2).
+        01      S-MLOGIN   PIC X(2).
+        01      S-MTECAJ   PIC X(2).
+        01      S-MVALUT   PIC X(2).
+        01      s-mracun   PIC X(2).
+      *****************************************************************
+        01      W-MPPART-VRSTA PIC 99.
+        01      W-MSIFRA-KONSTA PIC 99.
+        01      W-VSIFRA-KONSTA PIC XX.
+        01      W-MDATUM-DATUM.
+                03 W-MDATUM-LETO  PIC 9(2).
+                03 W-MDATUM-MESEC PIC 9(2).
+                03 W-MDATUM-DAN   PIC 9(2).
+        01      W-MDATUM-DATUM-R REDEFINES W-MDATUM-DATUM PIC 9(6).
+      *****************************************************************
+        01      WS-NAZIV  PIC X(20).
+        01      WS-KLJUC-N15 PIC 9(15).
+        01      WS-KLJUC-A15 PIC X(15).
+        01      WS-KLJUC-A20 PIC X(20).
+        01      WS-BUFFER-40 PIC X(40).
+      *****************************************************************
+        01      LLOGIN.
+             02 LLOGIN-AREA.
+                03 LLOGIN-OWNKEY.
+                        05 LLOGIN-SIFRA         PIC X(6).
+                        05 llogin-datum         pic x(6).
+                        05 LLOGIN-CAS.
+                                07 LLOGIN-URA           PIC 9(2).
+                                07 LLOGIN-MIN           PIC 9(2).
+                 05 LLOGIN-CAS-R REDEFINES LLOGIN-CAS     PIC 9(4).
+      *-----------------------------------------------------------------
+                03 llogin-faterr.
+                05 LLOGIN-NAZIV                 PIC X(20).
+                05 LLOGIN-OPOMBA                PIC X(15).
+                05 LLOGIN-PE.
+                        07 LLOGIN-SIFPE         PIC 9(4).
+                        07 LLOGIN-SIFPM         PIC 9(2).
+                05 LLOGIN-PE-R  REDEFINES LLOGIN-PE      PIC 9(6).
+                05 LLOGIN-PE-R1 REDEFINES LLOGIN-PE.
+                        07 LLOGIN-EKSPOZ                 PIC 9(2).
+                        07 LLOGIN-PE-RED                 PIC 9(2).
+                        07 FILLER                        PIC X(2).
+                05 LLOGIN-PRIOR                 PIC X(1).
+                05 LLOGIN-IZPIS                 PIC X(6).
+                05 LLOGIN-VRSTA                 PIC 99.
+                05 LLOGIN-PRODOV                PIC 99.
+                05 LLOGIN-ENTRY                 PIC 99.
+                05 LLOGIN-PASSW                 PIC X(6).
+                05 LLOGIN-STATIS.
+                        07 LLOGIN-SDATUM        PIC 9(6).
+                        07 LLOGIN-SOPERA        PIC X(6).
+                05 FILLER                       PIC X(8).
+             02 LLOGIN-INDIK                    PIC 9(1) VALUE 0.
+                88 OK-LLOGIN-INDIK VALUE 1.
+      ***********************  VINKO:  ********************************
+        01      LISTANJE-OPIS           PIC X(40).
+        01      LISTANJE-OPIS-30        PIC X(30).
+        01      WS-BUFFER-30            PIC X(30).
+        01      WS-BUFFER-70            PIC X(70).
+        01      WS-KLJUC-A40            PIC X(40).
+      ***********************  MARKO:  ********************************
+        01      WS-KLJUC-N3             PIC 9(3).
+        01      WS-VSIF05-MPPART        PIC 9(6).
+      *--------vinko
+        01      vnos-vbooki.
+                03      vnos-status     pic x(1).
+                03      vnos-stadej     pic x(1).
+                03      vnos-podroc     pic 9(2).
+                03      vnos-mppart     pic 9(6).
+                03      vnos-sifobj     pic 9(3).
+                03      vnos-tipkv1     pic x(1).
+                03      vnos-tipkv2     pic x(2).
+                03      vnos-katkva     pic x(2).
+                03      vnos-datod      pic 9(6).
+                03      vnos-datod-r redefines vnos-datod.
+                        07      vnos-let-od      pic 9(2).
+                        07      vnos-mes-od      pic 9(2).
+                        07      vnos-dan-od      pic 9(2).
+                03      vnos-datdo      pic 9(6).
+                03      vnos-datdo-r redefines vnos-datdo.
+                        05      vnos-let-do      pic 9(2).
+                        05      vnos-mes-do      pic 9(2).
+                        05      vnos-dan-do      pic 9(2).
+                03      vnos-dodatnih.
+                        05      vnos-dodatne    pic x(2) occurs 10.
+                03      vnos-l     pic x(1).
+
+       01  default-vrednosti.
+	   03  valobr-fix  pic 9(3).
+           03  valobr-dom  pic 9(3) value 890.
+           03  valobr-tuj  pic 9(3) value 891.
+           03  valobr-tpz-tuj pic 9(3) value 891.
+           03  drzroj-dom  pic x(2) value "YU".
+           03  vrsdok-dom  pic x(2) value "OI".
+           03  vrsdok-tuj  pic x(2) value "PL".
+           03  tpz pic x(6).
+               88 je-tpz value "   TAX" "   PRI" "   ZAV".
+           03  vrssto-tax  pic x(6) value "   TAX".
+           03  vrssto-pri  pic x(6) value "   PRI".
+           03  vrssto-zav  pic x(6) value "   ZAV".
+
+	01	tabela-mesecev pic x(36) value
+		"JANFEBMARAPRMAJJUNJULAVGSEPOKTNOVDEC".
+	01	tabela-mesecev-r redefines tabela-mesecev.
+		03	clen-mesec pic x(3) occurs 12.
+
+	01	TABELA-STATUSOV	PIC X(10) VALUE "_.#     ".
+	01	TABELA-STATUSOV-R REDEFINES TABELA-STATUSOV.
+		03	CLEN-STATUSA PIC X OCCURS 10.
+      * 1 - prosta osnovna lezisca
+      * 2 - prosta dodatna lezisca
+      * 3 - rezervacije
+      * 4 - zasedeno
+      * 5 - racun izpisan , ni placan

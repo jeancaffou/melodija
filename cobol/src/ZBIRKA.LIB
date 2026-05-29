@@ -1,0 +1,8 @@
+      *********************** zbirka.lib
+        fd      zbirka
+                        label record standard
+                        value of file-id is '\dusan\idx\zbirka.ind'.
+        01      zbirka-area.
+                03 zbirka-ownkey	pic 9(2).
+                03 zbirka-naziv		pic x(25).
+                03 zbirka-filler	pic x(23).

@@ -1,0 +1,4 @@
+ECHO OFF
+CLS
+C:\DUSAN\SRC\ARJ X a:dusidx.ARJ c:\DUSAN\idx /Y
+CD C:\DUSAN\SRC\

@@ -1,0 +1,7 @@
+	01	g-bold		pic x(50) value "G".
+	01	g-draft		pic x(50) value "H".
+
+	01	g-normal	pic x(50) value "P".
+	01	g-compress	pic x(50) value "".
+	01	g-elite		pic x(50) value "M".
+
