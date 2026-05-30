@@ -1,0 +1,9 @@
+.git/
+.idea/
+aesthetic/
+backups/
+dist/
+node_modules/
+release/
+melodija.db
+npm-debug.log*

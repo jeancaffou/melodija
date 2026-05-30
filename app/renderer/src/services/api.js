@@ -1,9 +1,14 @@
 const apiBase = window.melodija?.apiBase || '';
+const editorTokenKey = 'melodija.editorToken';
 
 async function request(path, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  const mutating = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+  const editorToken = mutating ? localStorage.getItem(editorTokenKey) : '';
   const response = await fetch(`${apiBase}${path}`, {
     headers: {
       'Content-Type': 'application/json',
+      ...(editorToken ? { 'X-Melodija-Editor-Token': editorToken } : {}),
       ...(options.headers || {})
     },
     ...options
@@ -14,6 +19,26 @@ async function request(path, options = {}) {
     throw new Error(payload?.error || payload || `HTTP ${response.status}`);
   }
   return payload;
+}
+
+async function downloadFile(path, filename) {
+  const editorToken = localStorage.getItem(editorTokenKey) || '';
+  const response = await fetch(`${apiBase}${path}`, {
+    headers: editorToken ? { 'X-Melodija-Editor-Token': editorToken } : {}
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `HTTP ${response.status}`);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 export const api = {
@@ -67,6 +92,7 @@ export const api = {
     method: 'POST',
     body: JSON.stringify({ operator })
   }),
+  downloadDatabase: () => downloadFile('/api/maintenance/download-db', 'melodija.db'),
   corrections: (params = {}) => request(`/api/corrections?${new URLSearchParams(params)}`),
   databaseTables: () => request('/api/database/tables'),
   databaseRows: (table, params = {}) => request(`/api/database/${table}?${new URLSearchParams(params)}`)

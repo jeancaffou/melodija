@@ -1,11 +1,12 @@
 <template>
   <q-layout view="hHh lpR fFf" :class="['melodija-app', theme]">
-    <q-header v-if="theme === 'modern'" class="modern-header">
+    <q-header v-if="theme === 'modern' && !introVisible" class="modern-header">
       <q-toolbar>
         <q-toolbar-title class="modern-title">
           <img class="modern-title-icon" :src="melodijaIconUrl" alt="" />
           <span>Melodija</span>
         </q-toolbar-title>
+        <q-badge class="modern-song-count" outline color="cyan-2">{{ counts.songs }} skladb</q-badge>
         <q-select
           class="modern-quick-jump"
           v-model="quickJump"
@@ -31,8 +32,17 @@
             </q-item>
           </template>
         </q-select>
-        <q-badge outline color="cyan-2">{{ counts.songs }} skladb</q-badge>
+        <q-btn
+          class="modern-mode-indicator"
+          flat
+          dense
+          :icon="entryModeIcon"
+          :title="entryModeLabel"
+          :aria-label="entryModeLabel"
+          @click="toggleEntryMode"
+        />
         <q-btn flat dense :icon="themeIcon" @click="toggleTheme" />
+        <q-btn class="modern-logout" flat dense icon="logout" label="Odjava" no-caps @click="logout" />
       </q-toolbar>
     </q-header>
 
@@ -43,6 +53,15 @@
         </section>
 
         <template v-else>
+          <section v-if="introVisible" class="dos-shell intro-mode">
+            <dos-splash :interactive="false" />
+            <div class="splash-entry-panel">
+              <button class="splash-entry-button" @click="enterCatalogMode">Pregled kataloga</button>
+              <button class="splash-entry-button" @click="requestEditorMode">Urejevalni način</button>
+            </div>
+          </section>
+
+          <template v-else>
           <section v-if="theme === 'modern'" class="modern-shell">
             <aside class="modern-nav">
               <q-btn
@@ -59,6 +78,9 @@
             </aside>
 
             <main class="modern-main">
+              <div v-if="isReadOnly" class="sheet-music-notice">
+                Za notno gradivo pišite na <a href="mailto:dusan@kafol.net">dusan@kafol.net</a> ter navedite ime skladbe in opombo.
+              </div>
               <div v-if="showModernActions" :class="['modern-actions', modernActionClass]">
                 <q-input
                   v-if="showModernSearch"
@@ -66,9 +88,22 @@
                   v-model="query"
                   dense
                   outlined
+                  clearable
                   debounce="250"
                   :label="searchLabel"
                   @update:model-value="refreshActiveFromStart"
+                >
+                  <template #prepend><q-icon name="search" /></template>
+                </q-input>
+                <q-input
+                  v-if="activeView === 'notes'"
+                  v-model="noteSearch"
+                  dense
+                  outlined
+                  clearable
+                  debounce="250"
+                  label="Išči opombo"
+                  @update:model-value="refreshNotes"
                 >
                   <template #prepend><q-icon name="search" /></template>
                 </q-input>
@@ -81,7 +116,8 @@
                   map-options
                   :options="choirOptions"
                   label="Zbor"
-                  @update:model-value="refreshActiveFromStart"
+                  clearable
+                  @update:model-value="normalizeChoirFilter"
                 />
                 <q-select
                   v-if="activeView === 'songs'"
@@ -128,10 +164,19 @@
                   @filter="filterNotes"
                   @update:model-value="refreshActiveFromStart"
                 />
-                <q-btn color="primary" icon="add" label="Nov zapis" no-caps @click="newRecord" />
+                <q-btn
+                  v-if="activeView === 'songs'"
+                  flat
+                  icon="filter_alt_off"
+                  label="Počisti filtre"
+                  no-caps
+                  :disable="!hasSongFilters"
+                  @click="clearSongFilters"
+                />
+                <q-btn color="primary" icon="add" label="Nov zapis" no-caps :disable="isReadOnly" @click="newRecord" />
               </div>
 
-              <div v-if="activeView === 'songs'" class="modern-grid">
+              <div v-if="activeView === 'songs'" :class="['modern-grid', { 'no-editor': !selectedRows[0] }]">
                 <q-table
                   class="catalog-table"
                   flat
@@ -175,12 +220,14 @@
                     </q-td>
                   </template>
                 </q-table>
-                <article class="editor-panel">
-                  <div class="panel-title">Skladba</div>
+                <article v-if="selectedRows[0]" class="editor-panel modern-editor-sidebar">
+                  <div class="panel-title">Uredi podatke</div>
+                  <q-btn class="editor-close" flat dense round icon="close" aria-label="Zapri urejanje" @click="closeSongEditor" />
                   <SongForm
                     :form="songForm"
                     :choir-options="choirOptions.slice(1)"
                     :author-options="authorOptions"
+                    :readonly="isReadOnly"
                     @filter-authors="filterAuthors"
                     @save="saveSong"
                     @delete="removeSong"
@@ -242,32 +289,11 @@
                         <span class="relation-name">{{ row.title }}</span>
                       </button>
                     </div>
-                    <div v-if="songContext.sameChoir.length" class="relation-block">
-                      <div class="relation-heading">Isti zbor <span>{{ songContext.sameChoirTotal }}</span></div>
-                      <button v-for="row in songContext.sameChoir" :key="`choir-${row.ownkey}`" class="relation-row" @click="focusSong(row)">
-                        <span class="relation-code">{{ songCode(row) }}</span>
-                        <span class="relation-name">{{ row.title }}</span>
-                      </button>
-                    </div>
-                    <div v-if="songContext.arranger.length" class="relation-block">
-                      <div class="relation-heading">Isti avtor <span>{{ songContext.arrangerTotal }}</span></div>
-                      <button v-for="row in songContext.arranger" :key="`arranger-${row.ownkey}`" class="relation-row" @click="focusSong(row)">
-                        <span class="relation-code">{{ songCode(row) }}</span>
-                        <span class="relation-name">{{ row.title }}</span>
-                      </button>
-                    </div>
-                    <div v-if="songContext.lyricist.length" class="relation-block">
-                      <div class="relation-heading">Isti pesnik <span>{{ songContext.lyricistTotal }}</span></div>
-                      <button v-for="row in songContext.lyricist" :key="`lyricist-${row.ownkey}`" class="relation-row" @click="focusSong(row)">
-                        <span class="relation-code">{{ songCode(row) }}</span>
-                        <span class="relation-name">{{ row.title }}</span>
-                      </button>
-                    </div>
                   </div>
                 </article>
               </div>
 
-              <div v-else-if="activeView === 'authors'" class="modern-grid">
+              <div v-else-if="activeView === 'authors'" :class="['modern-grid', { 'no-editor': !selectedAuthorRows[0] }]">
                 <q-table
                   class="catalog-table"
                   flat
@@ -279,12 +305,13 @@
                   selection="single"
                   v-model:selected="selectedAuthorRows"
                   :pagination="{ rowsPerPage: 18 }"
-                  @row-click="(_, row) => editAuthor(row)"
+                  @row-click="(_, row) => toggleAuthorEditor(row)"
                 />
-                <article class="editor-panel">
-                  <div class="panel-title">Avtor</div>
-                  <q-input v-model.number="authorForm.id" dense outlined label="Šifra" type="number" />
-                  <q-input v-model="authorForm.name" dense outlined label="Naziv" />
+                <article v-if="selectedAuthorRows[0]" class="editor-panel modern-editor-sidebar">
+                  <div class="panel-title">Uredi podatke</div>
+                  <q-btn class="editor-close" flat dense round icon="close" aria-label="Zapri urejanje" @click="closeAuthorEditor" />
+                  <q-input v-model.number="authorForm.id" dense outlined label="Šifra" type="number" :disable="isReadOnly" />
+                  <q-input v-model="authorForm.name" dense outlined label="Naziv" :disable="isReadOnly" />
                   <q-select
                     v-model.number="authorForm.type"
                     dense
@@ -293,9 +320,10 @@
                     map-options
                     :options="authorTypeOptions"
                     label="Vrsta"
+                    :disable="isReadOnly"
                   />
-                  <q-btn color="primary" icon="save" label="Shrani" no-caps @click="saveAuthor" />
-                  <q-btn flat color="negative" icon="delete" label="Briši" no-caps @click="removeAuthor" />
+                  <q-btn color="primary" icon="save" label="Shrani" no-caps :disable="isReadOnly" @click="saveAuthor" />
+                  <q-btn flat color="negative" icon="delete" label="Briši" no-caps :disable="isReadOnly" @click="removeAuthor" />
                   <div v-if="authorForm.id" class="context-panel">
                     <div class="context-title">Povezave</div>
                     <div class="context-actions">
@@ -320,7 +348,7 @@
                 </article>
               </div>
 
-              <div v-else-if="activeView === 'choirs'" class="modern-grid">
+              <div v-else-if="activeView === 'choirs'" :class="['modern-grid', { 'no-editor': !selectedChoirRows[0] }]">
                 <q-table
                   class="catalog-table"
                   flat
@@ -334,13 +362,14 @@
                   :pagination="{ rowsPerPage: 18 }"
                   @row-click="(_, row) => editChoir(row)"
                 />
-                <article class="editor-panel">
-                  <div class="panel-title">Zbor</div>
-                  <q-input v-model.number="choirForm.id" dense outlined label="Šifra" type="number" />
-                  <q-input v-model="choirForm.name" dense outlined label="Naziv" />
-                  <q-input v-model="choirForm.shortName" dense outlined label="Kratek naziv" />
-                  <q-btn color="primary" icon="save" label="Shrani" no-caps @click="saveChoir" />
-                  <q-btn flat color="negative" icon="delete" label="Briši" no-caps @click="removeChoir" />
+                <article v-if="selectedChoirRows[0]" class="editor-panel modern-editor-sidebar">
+                  <div class="panel-title">Uredi podatke</div>
+                  <q-btn class="editor-close" flat dense round icon="close" aria-label="Zapri urejanje" @click="closeChoirEditor" />
+                  <q-input v-model.number="choirForm.id" dense outlined label="Šifra" type="number" :disable="isReadOnly" />
+                  <q-input v-model="choirForm.name" dense outlined label="Naziv" :disable="isReadOnly" />
+                  <q-input v-model="choirForm.shortName" dense outlined label="Kratek naziv" :disable="isReadOnly" />
+                  <q-btn color="primary" icon="save" label="Shrani" no-caps :disable="isReadOnly" @click="saveChoir" />
+                  <q-btn flat color="negative" icon="delete" label="Briši" no-caps :disable="isReadOnly" @click="removeChoir" />
                   <div v-if="choirForm.id" class="context-panel">
                     <div class="context-title">Povezave</div>
                     <div class="context-actions">
@@ -360,9 +389,6 @@
               <div v-else-if="activeView === 'notes'" class="report-layout">
                 <article class="editor-panel report-options">
                   <div class="panel-title">Opombe</div>
-                  <q-input v-model="noteSearch" dense outlined debounce="250" label="Išči opombo" clearable @update:model-value="refreshNotes">
-                    <template #prepend><q-icon name="search" /></template>
-                  </q-input>
                   <div v-if="selectedNoteRows[0]" class="location-card">
                     <div class="location-label">Opomba</div>
                     <button class="location-value" @click="filterSongsByNote(selectedNoteRows[0].note)">{{ selectedNoteRows[0].note }}</button>
@@ -397,8 +423,8 @@
               <div v-else-if="activeView === 'reports'" class="report-layout">
                 <article class="editor-panel report-options">
                   <div class="panel-title">Izpis</div>
-                  <q-select v-model="reportType" dense outlined emit-value map-options :options="reportOptions" label="Vrsta" />
-                  <q-select v-model="reportOrder" dense outlined emit-value map-options :options="orderOptions" label="Ureditev" />
+                  <q-select v-model="reportType" dense outlined emit-value map-options :options="reportOptions" label="Vrsta" @update:model-value="reportOptionsChanged" />
+                  <q-select v-model="reportOrder" dense outlined emit-value map-options :options="orderOptions" label="Ureditev" @update:model-value="generateReport" />
                   <q-select
                     v-if="showReportChoirFilter"
                     v-model="choirFilter"
@@ -408,6 +434,8 @@
                     map-options
                     :options="choirOptions"
                     label="Zbor"
+                    clearable
+                    @update:model-value="normalizeReportChoirFilter"
                   />
                   <q-select
                     v-if="showReportAuthorFilter"
@@ -422,9 +450,10 @@
                     :options="authorOptions"
                     :label="reportAuthorLabel"
                     @filter="filterAuthors"
+                    @update:model-value="generateReport"
                   />
                   <q-btn color="primary" icon="receipt_long" label="Prikaži" no-caps @click="generateReport" />
-                  <q-btn flat icon="print" label="Tiskaj" no-caps @click="printReport" />
+                  <q-btn class="print-button" flat icon="print" label="Tiskaj" no-caps @click="printReport" />
                   <q-input v-model="reportFilter" dense outlined label="Išči po izpisu" clearable>
                     <template #prepend><q-icon name="search" /></template>
                   </q-input>
@@ -486,14 +515,15 @@
                   <div class="panel-title">Vzdrževanje</div>
                   <div class="stat-line">SQLite: {{ dbPath }}</div>
                   <div class="stat-line">Kopije: {{ maintenanceBackups.length }}</div>
-                  <q-btn color="primary" icon="save" label="Shranjevanje podatkov" no-caps @click="runMaintenanceAction('backup')" />
-                  <q-btn flat icon="restore" label="Vračanje podatkov" no-caps @click="runMaintenanceAction('restore')" />
-                  <q-btn flat icon="sync" label="Rebuild" no-caps @click="runMaintenanceAction('rebuild')" />
-                  <q-input v-model="appDate" dense outlined label="Datum aplikacije" type="date" />
-                  <q-input v-model="appTime" dense outlined label="Ura aplikacije" type="time" />
-                  <q-btn flat icon="event" label="Shrani datum/uro" no-caps @click="saveAppClock" />
-                  <q-input v-model="operatorName" dense outlined label="Vnašalec" />
-                  <q-btn flat icon="person" label="Shrani vnašalca" no-caps @click="saveOperator" />
+                  <q-btn color="primary" icon="save" label="Shranjevanje podatkov" no-caps :disable="isReadOnly" @click="runMaintenanceAction('backup')" />
+                  <q-btn flat icon="download" label="Prenesi bazo" no-caps :disable="isReadOnly" @click="downloadDatabase" />
+                  <q-btn flat icon="restore" label="Vračanje podatkov" no-caps :disable="isReadOnly" @click="runMaintenanceAction('restore')" />
+                  <q-btn flat icon="sync" label="Rebuild" no-caps :disable="isReadOnly" @click="runMaintenanceAction('rebuild')" />
+                  <q-input v-model="appDate" dense outlined label="Datum aplikacije" type="date" :disable="isReadOnly" />
+                  <q-input v-model="appTime" dense outlined label="Ura aplikacije" type="time" :disable="isReadOnly" />
+                  <q-btn flat icon="event" label="Shrani datum/uro" no-caps :disable="isReadOnly" @click="saveAppClock" />
+                  <q-input v-model="operatorName" dense outlined label="Vnašalec" :disable="isReadOnly" />
+                  <q-btn flat icon="person" label="Shrani vnašalca" no-caps :disable="isReadOnly" @click="saveOperator" />
                   <div v-if="maintenanceMessage" class="stat-line">{{ maintenanceMessage }}</div>
                 </article>
                 <pre class="report-preview">{{ maintenanceText }}</pre>
@@ -538,10 +568,7 @@
             </main>
           </section>
 
-          <section v-else :class="['dos-shell', { 'intro-mode': introVisible }]">
-            <dos-splash v-if="introVisible" @enter="enterIntro" />
-
-            <template v-else>
+          <section v-else class="dos-shell">
               <div class="dos-top">
                 <span>Copyright COMFIN</span>
                 <span>{{ currentOperator }}</span>
@@ -639,18 +666,18 @@
                         </tbody>
                       </table>
                       <div class="dos-edit-grid">
-                        <label>Zbor :</label><input v-model.number="songForm.choirId" data-dos-field="song.choir" />
-                        <label>Šifra :</label><input v-model.number="songForm.number" data-dos-field="song.number" />
-                        <label>Naziv :</label><input v-model="songForm.title" data-dos-field="song.title" />
-                        <label>Verz :</label><input v-model="songForm.verse" data-dos-field="song.verse" />
-                        <label>Pesnik :</label><input v-model.number="songForm.lyricistId" data-dos-field="song.lyricist" />
-                        <label>Avtor :</label><input v-model.number="songForm.arrangerId" data-dos-field="song.arranger" />
-                        <label>Opomba :</label><input v-model="songForm.note" data-dos-field="song.note" />
+                        <label>Zbor :</label><input v-model.number="songForm.choirId" data-dos-field="song.choir" :disabled="isReadOnly" />
+                        <label>Šifra :</label><input v-model.number="songForm.number" data-dos-field="song.number" :disabled="isReadOnly" />
+                        <label>Naziv :</label><input v-model="songForm.title" data-dos-field="song.title" :disabled="isReadOnly" />
+                        <label>Verz :</label><input v-model="songForm.verse" data-dos-field="song.verse" :disabled="isReadOnly" />
+                        <label>Pesnik :</label><input v-model.number="songForm.lyricistId" data-dos-field="song.lyricist" :disabled="isReadOnly" />
+                        <label>Avtor :</label><input v-model.number="songForm.arrangerId" data-dos-field="song.arranger" :disabled="isReadOnly" />
+                        <label>Opomba :</label><input v-model="songForm.note" data-dos-field="song.note" :disabled="isReadOnly" />
                       </div>
                       <div class="dos-buttons">
-                        <button @click="saveSong">Shrani</button>
-                        <button @click="newSong">Nov</button>
-                        <button @click="removeSong">Briši</button>
+                        <button :disabled="isReadOnly" @click="saveSong">Shrani</button>
+                        <button :disabled="isReadOnly" @click="newSong">Nov</button>
+                        <button :disabled="isReadOnly" @click="removeSong">Briši</button>
                       </div>
                     </div>
 
@@ -672,15 +699,15 @@
                         </tbody>
                       </table>
                       <div class="dos-edit-grid compact">
-                        <label>Šifra :</label><input v-model.number="authorForm.id" data-dos-field="author.id" />
-                        <label>Naziv :</label><input v-model="authorForm.name" data-dos-field="author.name" />
-                        <label>Vrsta :</label><input v-model.number="authorForm.type" data-dos-field="author.type" />
+                        <label>Šifra :</label><input v-model.number="authorForm.id" data-dos-field="author.id" :disabled="isReadOnly" />
+                        <label>Naziv :</label><input v-model="authorForm.name" data-dos-field="author.name" :disabled="isReadOnly" />
+                        <label>Vrsta :</label><input v-model.number="authorForm.type" data-dos-field="author.type" :disabled="isReadOnly" />
                       </div>
                       <div class="dos-buttons">
-                        <button @click="saveAuthor">Shrani</button>
-                        <button @click="newAuthor">Nov</button>
-                        <button @click="fillNextAuthorId">Naslednja</button>
-                        <button @click="removeAuthor">Briši</button>
+                        <button :disabled="isReadOnly" @click="saveAuthor">Shrani</button>
+                        <button :disabled="isReadOnly" @click="newAuthor">Nov</button>
+                        <button :disabled="isReadOnly" @click="fillNextAuthorId">Naslednja</button>
+                        <button :disabled="isReadOnly" @click="removeAuthor">Briši</button>
                       </div>
                     </div>
 
@@ -698,41 +725,72 @@
                         </tbody>
                       </table>
                       <div class="dos-edit-grid compact">
-                        <label>Šifra :</label><input v-model.number="choirForm.id" data-dos-field="choir.id" />
-                        <label>Naziv :</label><input v-model="choirForm.name" data-dos-field="choir.name" />
-                        <label>Kratko :</label><input v-model="choirForm.shortName" data-dos-field="choir.shortName" />
+                        <label>Šifra :</label><input v-model.number="choirForm.id" data-dos-field="choir.id" :disabled="isReadOnly" />
+                        <label>Naziv :</label><input v-model="choirForm.name" data-dos-field="choir.name" :disabled="isReadOnly" />
+                        <label>Kratko :</label><input v-model="choirForm.shortName" data-dos-field="choir.shortName" :disabled="isReadOnly" />
                       </div>
                       <div class="dos-buttons">
-                        <button @click="saveChoir">Shrani</button>
-                        <button @click="newChoir">Nov</button>
-                        <button @click="fillNextChoirId">Naslednja</button>
-                        <button @click="removeChoir">Briši</button>
+                        <button :disabled="isReadOnly" @click="saveChoir">Shrani</button>
+                        <button :disabled="isReadOnly" @click="newChoir">Nov</button>
+                        <button :disabled="isReadOnly" @click="fillNextChoirId">Naslednja</button>
+                        <button :disabled="isReadOnly" @click="removeChoir">Briši</button>
                       </div>
                     </div>
 
                     <div v-else-if="activeView === 'reports'" class="dos-catalog">
                       <div class="dos-form-row">
                         <label>Izpis :</label>
-                        <select v-model="reportType">
+                        <select v-model="reportType" @change="reportOptionsChanged">
                           <option v-for="option in reportOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                         </select>
                         <button @click="generateReport">Prikaži</button>
                       </div>
                       <div class="dos-form-row">
                         <label>Zbor :</label>
-                        <select v-model.number="choirFilter" data-dos-field="report.choir">
+                        <select v-model.number="choirFilter" data-dos-field="report.choir" @change="generateReport">
                           <option v-for="option in choirOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                         </select>
-                        <select v-model="reportOrder">
+                        <select v-model="reportOrder" @change="generateReport">
                           <option v-for="option in orderOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                         </select>
                       </div>
                       <div class="dos-form-row">
                         <label>{{ reportAuthorLabel }} :</label>
-                        <input v-model.number="reportAuthor" data-dos-field="report.author" />
-                        <button @click="printReport">Tiskaj</button>
+                        <input v-model="reportAuthor" data-dos-field="report.author" @input="generateReport" />
+                        <button class="print-button" @click="printReport">Tiskaj</button>
                       </div>
                       <pre class="dos-report">{{ reportText }}</pre>
+                      <section class="print-report" aria-hidden="true">
+                        <h1>{{ reportPrintTitle }}</h1>
+                        <div class="print-meta">{{ reportPrintMeta }}</div>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th
+                                v-for="column in reportColumns"
+                                :key="column.name"
+                                :class="`print-col-${column.name}`"
+                              >
+                                {{ column.label }}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr v-for="row in filteredReportRows" :key="printReportRowKey(row)">
+                              <td
+                                v-for="column in reportColumns"
+                                :key="column.name"
+                                :class="`print-col-${column.name}`"
+                              >
+                                {{ reportCell(row, column) }}
+                              </td>
+                            </tr>
+                            <tr v-if="!filteredReportRows.length">
+                              <td :colspan="reportColumns.length">Ni podatkov za izpis.</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </section>
                     </div>
 
                     <div v-else class="dos-catalog">
@@ -742,39 +800,62 @@
                         <div v-if="maintenanceMessage">{{ maintenanceMessage }}</div>
                         <div class="dos-form-row">
                           <label>Datum :</label>
-                          <input v-model="appDate" type="date" />
+                          <input v-model="appDate" type="date" :disabled="isReadOnly" />
                         </div>
                         <div class="dos-form-row">
                           <label>Ura :</label>
-                          <input v-model="appTime" type="time" />
+                          <input v-model="appTime" type="time" :disabled="isReadOnly" />
                         </div>
                         <div class="dos-form-row">
                           <label>Vnašalec :</label>
-                          <input v-model="operatorName" />
+                          <input v-model="operatorName" :disabled="isReadOnly" />
                         </div>
                       </div>
                       <div class="dos-buttons">
-                        <button @click="runMaintenanceAction('backup')">Shrani</button>
-                        <button @click="runMaintenanceAction('restore')">Vrni</button>
-                        <button @click="runMaintenanceAction('rebuild')">Rebuild</button>
-                        <button @click="saveAppClock">Datum/Ura</button>
-                        <button @click="saveOperator">Vnašalec</button>
+                        <button :disabled="isReadOnly" @click="runMaintenanceAction('backup')">Shrani</button>
+                        <button :disabled="isReadOnly" @click="downloadDatabase">Prenesi bazo</button>
+                        <button :disabled="isReadOnly" @click="runMaintenanceAction('restore')">Vrni</button>
+                        <button :disabled="isReadOnly" @click="runMaintenanceAction('rebuild')">Rebuild</button>
+                        <button :disabled="isReadOnly" @click="saveAppClock">Datum/Ura</button>
+                        <button :disabled="isReadOnly" @click="saveOperator">Vnašalec</button>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
+              <div v-if="isReadOnly" class="dos-sheet-notice">
+                Za notno gradivo pišite na dusan@kafol.net ter navedite ime skladbe in opombo.
+              </div>
               <div class="dos-status">{{ statusLine }}</div>
-            </template>
           </section>
+          </template>
         </template>
+
+        <form v-if="entryPasswordVisible" class="splash-password-dialog" @submit.prevent="submitEditorPassword">
+          <div class="splash-dialog-title">GESLO ZA UREJANJE</div>
+          <label>
+            <span>Geslo:</span>
+            <input
+              ref="entryPasswordInput"
+              v-model="entryPassword"
+              type="password"
+              autocomplete="current-password"
+              @keydown.esc.prevent="cancelEditorPassword"
+            />
+          </label>
+          <div v-if="entryPasswordError" class="splash-dialog-error">{{ entryPasswordError }}</div>
+          <div class="splash-dialog-actions">
+            <button type="submit">Potrdi</button>
+            <button type="button" @click="cancelEditorPassword">Preklic</button>
+          </div>
+        </form>
       </q-page>
     </q-page-container>
   </q-layout>
 </template>
 
 <script setup>
-import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { QBtn, QInput, QSelect, useQuasar } from 'quasar';
 import { BookOpen, FileText, ListMusic, Monitor, Moon, PenLine, Search, Settings, Users } from 'lucide-vue-next';
 import { api } from './services/api.js';
@@ -788,7 +869,8 @@ const SongForm = defineComponent({
   props: {
     form: { type: Object, required: true },
     choirOptions: { type: Array, required: true },
-    authorOptions: { type: Array, required: true }
+    authorOptions: { type: Array, required: true },
+    readonly: { type: Boolean, default: false }
   },
   emits: ['filter-authors', 'save', 'delete'],
   setup(props, { emit }) {
@@ -802,7 +884,8 @@ const SongForm = defineComponent({
           outlined: true,
           emitValue: true,
           mapOptions: true,
-          label: 'Zbor'
+          label: 'Zbor',
+          disable: props.readonly
         }),
         h(QInput, {
           modelValue: props.form.number,
@@ -810,7 +893,8 @@ const SongForm = defineComponent({
           dense: true,
           outlined: true,
           type: 'number',
-          label: 'Šifra'
+          label: 'Šifra',
+          disable: props.readonly
         })
       ]),
       h(QInput, {
@@ -818,14 +902,16 @@ const SongForm = defineComponent({
         'onUpdate:modelValue': (value) => { props.form.title = value; },
         dense: true,
         outlined: true,
-        label: 'Naziv'
+        label: 'Naziv',
+        disable: props.readonly
       }),
       h(QInput, {
         modelValue: props.form.verse,
         'onUpdate:modelValue': (value) => { props.form.verse = value; },
         dense: true,
         outlined: true,
-        label: 'Začetni verz'
+        label: 'Začetni verz',
+        disable: props.readonly
       }),
       h(QSelect, {
         modelValue: props.form.arrangerId,
@@ -839,6 +925,7 @@ const SongForm = defineComponent({
         mapOptions: true,
         inputDebounce: 250,
         label: 'Avtor glasbe / priredbe',
+        disable: props.readonly,
         onFilter: (value, update) => emit('filter-authors', value, update)
       }),
       h(QSelect, {
@@ -853,6 +940,7 @@ const SongForm = defineComponent({
         mapOptions: true,
         inputDebounce: 250,
         label: 'Avtor besedila / osnova',
+        disable: props.readonly,
         onFilter: (value, update) => emit('filter-authors', value, update)
       }),
       h(QInput, {
@@ -861,11 +949,12 @@ const SongForm = defineComponent({
         dense: true,
         outlined: true,
         autogrow: true,
-        label: 'Opomba'
+        label: 'Opomba',
+        disable: props.readonly
       }),
       h('div', { class: 'form-actions' }, [
-        h(QBtn, { color: 'primary', icon: 'save', label: 'Shrani', noCaps: true, onClick: () => emit('save') }),
-        h(QBtn, { flat: true, color: 'negative', icon: 'delete', label: 'Briši', noCaps: true, onClick: () => emit('delete') })
+        h(QBtn, { color: 'primary', icon: 'save', label: 'Shrani', noCaps: true, disable: props.readonly, onClick: () => emit('save') }),
+        h(QBtn, { flat: true, color: 'negative', icon: 'delete', label: 'Briši', noCaps: true, disable: props.readonly, onClick: () => emit('delete') })
       ])
     ]);
   }
@@ -874,6 +963,11 @@ const SongForm = defineComponent({
 const loading = ref(true);
 const theme = ref('dos');
 const introVisible = ref(true);
+const entryMode = ref('');
+const entryPasswordVisible = ref(false);
+const entryPassword = ref('');
+const entryPasswordError = ref('');
+const entryPasswordEnterAfterUnlock = ref(true);
 const activeView = ref('menu');
 const query = ref('');
 const choirFilter = ref(0);
@@ -956,9 +1050,15 @@ const choirContext = reactive({ songs: [], total: 0 });
 const searchInput = ref(null);
 const dosSearchInput = ref(null);
 const servicePasswordInput = ref(null);
+const entryPasswordInput = ref(null);
 let songContextRequest = 0;
 let authorContextRequest = 0;
 let choirContextRequest = 0;
+
+const ENTRY_MODE_KEY = 'melodija.entryMode';
+const EDITOR_TOKEN_KEY = 'melodija.editorToken';
+const EDITOR_PASSWORD_SALT = 'melodija-editor-auth-v1:2026-05-29';
+const EDITOR_PASSWORD_TOKEN = 'dae9b02479c58ecf1922eb57c1431ea8f9f0ee2779b6f1381775efa6b02f045697cec3e33246bb4740b08c76a4069772d609dd7202b346f407bbba320433c193';
 
 const menuItems = [
   {
@@ -982,6 +1082,7 @@ const menuItems = [
     label: 'Vzdrževanje',
     children: [
       { label: 'Shranjevanje podatkov', view: 'maintenance', action: 'backup', icon: 'save' },
+      { label: 'Prenesi bazo', view: 'maintenance', action: 'download-db', icon: 'download' },
       { label: 'Sprememba datuma', view: 'maintenance', action: 'date', icon: 'event' },
       { label: 'Sprememba ure', view: 'maintenance', action: 'time', icon: 'schedule' },
       { label: 'Vračanje podatkov', view: 'maintenance', action: 'restore', icon: 'restore' }
@@ -998,7 +1099,7 @@ const menuItems = [
   { label: 'Konec', children: [] }
 ];
 
-const flatViews = [
+const baseFlatViews = [
   { label: 'Pesmi', view: 'songs', icon: 'library_music' },
   { label: 'Opombe', view: 'notes', icon: 'inventory_2' },
   { label: 'Avtorji', view: 'authors', icon: 'groups' },
@@ -1068,19 +1169,40 @@ const today = computed(() => {
   return Number.isNaN(parsed.getTime()) ? appDate.value : parsed.toLocaleDateString('sl-SI');
 });
 const currentOperator = computed(() => operatorName.value || 'dusan');
-const activeTitle = computed(() => flatViews.find((item) => item.view === activeView.value)?.label || 'Melodija');
+const isEditor = computed(() => entryMode.value === 'editor');
+const isReadOnly = computed(() => !isEditor.value);
+const entryModeLabel = computed(() => isEditor.value ? 'Urejevalni način' : 'Pregled kataloga');
+const entryModeIcon = computed(() => isEditor.value ? 'edit_note' : 'visibility');
+const flatViews = computed(() => (
+  isReadOnly.value
+    ? baseFlatViews.filter((item) => !['notes', 'maintenance', 'database'].includes(item.view))
+    : baseFlatViews
+));
+const activeTitle = computed(() => baseFlatViews.find((item) => item.view === activeView.value)?.label || 'Melodija');
 const statusLine = computed(() => 'ESC-konec  F1-potrditev  F4-nazaj  F5-šifre  F6-ABC  F7-izpis šifre  F8-izpis ABC  F10-brisanje');
 const themeIcon = computed(() => theme.value === 'modern' ? 'terminal' : 'dashboard');
-const showModernActions = computed(() => ['songs', 'authors', 'choirs'].includes(activeView.value));
+const showModernActions = computed(() => ['songs', 'authors', 'choirs', 'notes'].includes(activeView.value));
 const showModernSearch = computed(() => ['songs', 'authors'].includes(activeView.value));
 const modernActionClass = computed(() => ({
   'is-compact': activeView.value !== 'songs',
-  'is-single': !showModernSearch.value
+  'is-single': activeView.value === 'choirs'
 }));
+const hasSongFilters = computed(() => (
+  Boolean(String(query.value || '').trim())
+  || Boolean(choirFilter.value)
+  || Boolean(songArrangerFilter.value)
+  || Boolean(songLyricistFilter.value)
+  || Boolean(noteFilter.value)
+));
 const showReportChoirFilter = computed(() => ['songs', 'by-arranger', 'by-lyricist'].includes(reportType.value));
-const showReportAuthorFilter = computed(() => ['by-arranger', 'by-lyricist'].includes(reportType.value));
+const showReportAuthorFilter = computed(() => ['songs', 'authors', 'choirs', 'by-arranger', 'by-lyricist'].includes(reportType.value));
 const searchLabel = computed(() => activeView.value === 'authors' ? 'Išči avtorja' : 'Išči skladbo, verz, avtorja, pesnika ali opombo');
-const reportAuthorLabel = computed(() => reportType.value === 'by-lyricist' ? 'Pesnik' : 'Avtor');
+const reportAuthorLabel = computed(() => {
+  if (reportType.value === 'by-lyricist') return 'Pesnik';
+  if (reportType.value === 'songs') return 'Išči';
+  if (reportType.value === 'choirs') return 'Zbor';
+  return 'Avtor';
+});
 const reportColumns = computed(() => {
   if (reportType.value === 'authors') {
     return [
@@ -1180,15 +1302,104 @@ function printReportRowKey(row) {
   return row?.[reportRowKey.value] ?? `${reportType.value}-${filteredReportRows.value.indexOf(row)}`;
 }
 
+async function sha512Hex(value) {
+  const data = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-512', data);
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function editorTokenForPassword(password) {
+  const passwordHash = await sha512Hex(password);
+  return sha512Hex(`${EDITOR_PASSWORD_SALT}:${passwordHash}`);
+}
+
+function restoreEntryMode() {
+  const savedMode = localStorage.getItem(ENTRY_MODE_KEY);
+  const savedToken = localStorage.getItem(EDITOR_TOKEN_KEY);
+  if (savedMode === 'editor' && savedToken === EDITOR_PASSWORD_TOKEN) {
+    entryMode.value = 'editor';
+    return;
+  }
+  if (savedMode === 'catalog') {
+    entryMode.value = 'catalog';
+  }
+}
+
+function persistEntryMode(mode) {
+  entryMode.value = mode;
+  localStorage.setItem(ENTRY_MODE_KEY, mode);
+}
+
+function enterCatalogMode() {
+  persistEntryMode('catalog');
+  enterIntro();
+}
+
+function requestEditorMode({ enterAfterUnlock = true } = {}) {
+  entryPasswordEnterAfterUnlock.value = enterAfterUnlock;
+  if (localStorage.getItem(EDITOR_TOKEN_KEY) === EDITOR_PASSWORD_TOKEN) {
+    persistEntryMode('editor');
+    if (entryPasswordEnterAfterUnlock.value) enterIntro();
+    return;
+  }
+  entryPassword.value = '';
+  entryPasswordError.value = '';
+  entryPasswordVisible.value = true;
+  nextTick(() => entryPasswordInput.value?.focus());
+}
+
+async function submitEditorPassword() {
+  const token = await editorTokenForPassword(entryPassword.value);
+  if (token === EDITOR_PASSWORD_TOKEN) {
+    localStorage.setItem(EDITOR_TOKEN_KEY, token);
+    persistEntryMode('editor');
+    entryPassword.value = '';
+    entryPasswordError.value = '';
+    entryPasswordVisible.value = false;
+    if (entryPasswordEnterAfterUnlock.value) enterIntro();
+    return;
+  }
+  entryPassword.value = '';
+  entryPasswordError.value = 'Napačno geslo.';
+  nextTick(() => entryPasswordInput.value?.focus());
+}
+
+function cancelEditorPassword() {
+  entryPassword.value = '';
+  entryPasswordError.value = '';
+  entryPasswordVisible.value = false;
+  entryPasswordEnterAfterUnlock.value = true;
+}
+
+function toggleEntryMode() {
+  if (isEditor.value) {
+    persistEntryMode('catalog');
+    return;
+  }
+  requestEditorMode({ enterAfterUnlock: introVisible.value });
+}
+
+function requireEditor() {
+  if (isEditor.value) return true;
+  $q.notify({ type: 'warning', message: 'Pregled kataloga je samo za branje.' });
+  return false;
+}
+
+function logout() {
+  localStorage.removeItem(ENTRY_MODE_KEY);
+  localStorage.removeItem(EDITOR_TOKEN_KEY);
+  entryMode.value = '';
+  returnToIntro();
+}
+
 async function initialize() {
   const boot = await api.bootstrap();
   dbPath.value = boot.dbPath;
   Object.assign(counts, boot.counts);
-  theme.value = boot.settings['ui.theme'] || localStorage.getItem('melodija.theme') || 'dos';
-  if (theme.value === 'modern') {
-    introVisible.value = false;
-    activeView.value = 'songs';
-  }
+  theme.value = localStorage.getItem('melodija.theme') || 'dos';
+  restoreEntryMode();
   appDate.value = boot.settings['app.date'] || '';
   appTime.value = boot.settings['app.time'] || '';
   operatorName.value = boot.settings['operator.name'] || boot.operator?.name || 'dusan';
@@ -1211,7 +1422,13 @@ async function refreshSongs() {
   });
   songs.value = result.rows;
   clampDosSelection();
-  if (!songForm.ownkey && result.rows[0]) {
+  if (!result.rows.length) {
+    selectedRows.value = [];
+    clearSongContext();
+    if (activeView.value === 'songs') assign(songForm, emptySong());
+    return;
+  }
+  if (theme.value === 'dos' && activeView.value === 'songs' && !songForm.ownkey && result.rows[0]) {
     editSong(result.rows[0]);
   }
 }
@@ -1252,23 +1469,42 @@ function resetDosPosition() {
 async function refreshActiveFromStart() {
   resetDosPosition();
   await refreshActive();
-  selectDosResult(0);
+  if (theme.value === 'dos') selectDosResult(0);
 }
 
 async function refreshSongsFromStart() {
   resetDosPosition();
   await refreshSongs();
-  selectDosResult(0);
+  if (theme.value === 'dos') selectDosResult(0);
 }
 
 async function refreshSongsFromRoleFilter() {
   await refreshSongsFromStart();
 }
 
+async function clearSongFilters() {
+  query.value = '';
+  choirFilter.value = 0;
+  songArrangerFilter.value = null;
+  songLyricistFilter.value = null;
+  noteFilter.value = null;
+  await refreshSongsFromStart();
+}
+
+async function normalizeChoirFilter(value) {
+  choirFilter.value = value || 0;
+  await refreshActiveFromStart();
+}
+
+async function normalizeReportChoirFilter(value) {
+  choirFilter.value = value || 0;
+  await generateReport();
+}
+
 async function refreshAuthorsFromStart() {
   resetDosPosition();
   await refreshAuthors();
-  selectDosResult(0);
+  if (theme.value === 'dos') selectDosResult(0);
 }
 
 function editSong(song) {
@@ -1286,17 +1522,25 @@ function editSong(song) {
   loadSongContext(song);
 }
 
+function closeSongEditor() {
+  selectedRows.value = [];
+  assign(songForm, emptySong());
+  clearSongContext();
+}
+
 async function fillNextSongNumber() {
   const result = await api.nextSongNumber(songForm.choirId || 3);
   songForm.number = result.nextNumber;
 }
 
 async function newSong() {
+  if (!requireEditor()) return;
   assign(songForm, emptySong());
   songForm.choirId = choirFilter.value || 3;
-  selectedRows.value = [];
+  selectedRows.value = [{ ...songForm }];
   clearSongContext();
   await fillNextSongNumber();
+  selectedRows.value = [{ ...songForm }];
 }
 
 async function fillNextAuthorId() {
@@ -1305,8 +1549,11 @@ async function fillNextAuthorId() {
 }
 
 async function newAuthor() {
+  if (!requireEditor()) return;
   assign(authorForm, { id: null, name: '', type: 1 });
+  selectedAuthorRows.value = [{ ...authorForm }];
   await fillNextAuthorId();
+  selectedAuthorRows.value = [{ ...authorForm }];
 }
 
 async function fillNextChoirId() {
@@ -1315,17 +1562,22 @@ async function fillNextChoirId() {
 }
 
 async function newChoir() {
+  if (!requireEditor()) return;
   assign(choirForm, { id: null, name: '', shortName: '' });
+  selectedChoirRows.value = [{ ...choirForm }];
   await fillNextChoirId();
+  selectedChoirRows.value = [{ ...choirForm }];
 }
 
 function newRecord() {
+  if (!requireEditor()) return;
   if (activeView.value === 'songs') newSong();
   if (activeView.value === 'authors') newAuthor();
   if (activeView.value === 'choirs') newChoir();
 }
 
 async function saveSong() {
+  if (!requireEditor()) return;
   try {
     const saved = await api.saveSong({ ...songForm });
     editSong(saved);
@@ -1337,6 +1589,7 @@ async function saveSong() {
 }
 
 async function removeSong() {
+  if (!requireEditor()) return;
   if (!songForm.ownkey) return;
   if (!window.confirm('Izbrišem skladbo?')) return;
   try {
@@ -1355,7 +1608,22 @@ function editAuthor(author) {
   loadAuthorContext(author.id);
 }
 
+function closeAuthorEditor() {
+  selectedAuthorRows.value = [];
+  assign(authorForm, { id: null, name: '', type: 1 });
+  clearAuthorContext();
+}
+
+function toggleAuthorEditor(author) {
+  if (selectedAuthorRows.value[0]?.id === author?.id) {
+    closeAuthorEditor();
+    return;
+  }
+  editAuthor(author);
+}
+
 async function saveAuthor() {
+  if (!requireEditor()) return;
   try {
     const saved = await api.saveAuthor({ ...authorForm });
     editAuthor(saved);
@@ -1368,6 +1636,7 @@ async function saveAuthor() {
 }
 
 async function removeAuthor() {
+  if (!requireEditor()) return;
   if (!authorForm.id) return;
   if (!window.confirm('Izbrišem avtorja?')) return;
   try {
@@ -1385,6 +1654,12 @@ function editChoir(choir) {
   assign(choirForm, choir);
   selectedChoirRows.value = [choir];
   loadChoirContext(choir.id);
+}
+
+function closeChoirEditor() {
+  selectedChoirRows.value = [];
+  assign(choirForm, { id: null, name: '', shortName: '' });
+  clearChoirContext();
 }
 
 function editNote(note) {
@@ -1443,6 +1718,7 @@ function selectDosResult(index) {
 }
 
 async function saveChoir() {
+  if (!requireEditor()) return;
   try {
     const saved = await api.saveChoir({ ...choirForm });
     editChoir(saved);
@@ -1454,6 +1730,7 @@ async function saveChoir() {
 }
 
 async function removeChoir() {
+  if (!requireEditor()) return;
   if (!choirForm.id) return;
   if (!window.confirm('Izbrišem zbor?')) return;
   try {
@@ -1687,6 +1964,24 @@ async function generateReport() {
   });
   reportText.value = result.lines.join('\n');
   reportRows.value = result.rows || [];
+}
+
+async function reportOptionsChanged() {
+  syncClassicReportMenuSelection();
+  if (!showReportAuthorFilter.value) {
+    reportAuthor.value = null;
+  }
+  await generateReport();
+}
+
+function syncClassicReportMenuSelection() {
+  const reportMainIndex = menuItems.findIndex((item) => item.label === 'Izpisi');
+  if (reportMainIndex < 0) return;
+  const childIndex = menuItems[reportMainIndex].children.findIndex((item) => item.reportType === reportType.value);
+  if (childIndex < 0) return;
+  selectedMain.value = reportMainIndex;
+  selectedChild.value = childIndex;
+  menuLevel.value = 'child';
 }
 
 async function printReport() {
@@ -2100,6 +2395,11 @@ async function loadMaintenance() {
 async function runMaintenanceAction(action) {
   activeView.value = 'maintenance';
   maintenanceMessage.value = '';
+  if (!requireEditor()) {
+    maintenanceMessage.value = 'Pregled kataloga je samo za branje.';
+    await loadMaintenance();
+    return;
+  }
   if (action === 'date') {
     maintenanceMessage.value = 'Vnesi datum aplikacije in potrdi Datum/Ura.';
     await loadMaintenance();
@@ -2132,13 +2432,24 @@ async function runMaintenanceAction(action) {
   }
 }
 
+async function downloadDatabase() {
+  if (!requireEditor()) return;
+  try {
+    await api.downloadDatabase();
+  } catch (error) {
+    notifyError(error);
+  }
+}
+
 async function saveAppClock() {
+  if (!requireEditor()) return;
   const result = await api.setAppClock(appDate.value, appTime.value);
   maintenanceMessage.value = result.message || 'Datum/ura shranjena.';
   await loadMaintenance();
 }
 
 async function saveOperator() {
+  if (!requireEditor()) return;
   const result = await api.setOperator(operatorName.value);
   operatorName.value = result.operator || operatorName.value || 'dusan';
   maintenanceMessage.value = result.message || 'Vnašalec shranjen.';
@@ -2146,6 +2457,7 @@ async function saveOperator() {
 }
 
 async function openView(view) {
+  cancelServicePassword();
   activeView.value = view;
   resetDosPosition();
   if (view === 'songs') await refreshSongs();
@@ -2155,13 +2467,20 @@ async function openView(view) {
   if (view === 'reports') await generateReport();
   if (view === 'maintenance') await loadMaintenance();
   if (view === 'database') await refreshDatabase();
-  if (['songs', 'authors', 'choirs'].includes(view)) {
+  if (theme.value === 'dos' && ['songs', 'authors', 'choirs'].includes(view)) {
     selectDosResult(0);
   }
 }
 
 function selectMain(index, activateExit = false) {
   if (introVisible.value) return;
+  if (!isServiceMenu(index)) {
+    cancelServicePassword();
+  }
+  if (theme.value === 'dos') {
+    activeView.value = 'menu';
+    closeLookup();
+  }
   selectedMain.value = index;
   selectedChild.value = 0;
   menuLevel.value = 'main';
@@ -2171,7 +2490,7 @@ function selectMain(index, activateExit = false) {
     return;
   }
   if (menuItems[index]?.label === 'Konec') {
-    returnToIntro();
+    logout();
     return;
   }
   if (menuItems[index]?.children?.length) {
@@ -2191,12 +2510,15 @@ function selectChild(index) {
 
 function enterIntro() {
   introVisible.value = false;
-  activeView.value = 'menu';
+  activeView.value = theme.value === 'modern' ? 'songs' : 'menu';
   menuLevel.value = 'main';
 }
 
 function returnToIntro() {
   introVisible.value = true;
+  entryPasswordVisible.value = false;
+  entryPassword.value = '';
+  entryPasswordError.value = '';
   activeView.value = 'menu';
   selectedMain.value = 0;
   selectedChild.value = 0;
@@ -2235,7 +2557,7 @@ function activateMain() {
     return;
   }
   if (menuItems[selectedMain.value].label === 'Konec') {
-    returnToIntro();
+    logout();
     return;
   }
   if (menuItems[selectedMain.value].action === 'modern') {
@@ -2261,6 +2583,11 @@ async function activateChild() {
   if (child.reportType) {
     reportType.value = child.reportType;
   }
+  if (child.action === 'download-db') {
+    await openView('maintenance');
+    await downloadDatabase();
+    return;
+  }
   if (child.action) {
     await runMaintenanceAction(child.action);
     return;
@@ -2272,10 +2599,10 @@ function handleKeydown(event) {
   if (event.defaultPrevented) return;
   const tag = event.target?.tagName;
   const inField = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(tag);
-  if (theme.value === 'dos' && introVisible.value) {
-    if (!['Alt', 'Control', 'Meta', 'Shift', 'Tab'].includes(event.key)) {
+  if (introVisible.value) {
+    if (event.key === 'Escape' && entryPasswordVisible.value) {
       event.preventDefault();
-      enterIntro();
+      cancelEditorPassword();
     }
     return;
   }
@@ -2495,7 +2822,6 @@ async function toggleTheme() {
   const nextTheme = theme.value === 'dos' ? 'modern' : 'dos';
   theme.value = nextTheme;
   if (nextTheme === 'modern') {
-    introVisible.value = false;
     if (activeView.value === 'menu') {
       await openView('songs');
     }
@@ -2504,7 +2830,6 @@ async function toggleTheme() {
     menuLevel.value = 'main';
   }
   localStorage.setItem('melodija.theme', theme.value);
-  await api.setSetting('ui.theme', theme.value);
 }
 
 async function openModernUi() {
@@ -2516,6 +2841,12 @@ async function openModernUi() {
     await openView('songs');
   }
 }
+
+watch(isReadOnly, async (readOnly) => {
+  if (readOnly && ['notes', 'maintenance', 'database'].includes(activeView.value)) {
+    await openView('songs');
+  }
+});
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);

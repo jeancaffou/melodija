@@ -9,9 +9,26 @@ const jsonHeaders = {
   'Cache-Control': 'no-store'
 };
 
+const EDITOR_TOKEN_HEADER = 'x-melodija-editor-token';
+const EDITOR_PASSWORD_TOKEN = 'dae9b02479c58ecf1922eb57c1431ea8f9f0ee2779b6f1381775efa6b02f045697cec3e33246bb4740b08c76a4069772d609dd7202b346f407bbba320433c193';
+
 function send(res, status, payload) {
   res.writeHead(status, jsonHeaders);
   res.end(JSON.stringify(payload));
+}
+
+function isMutationRequest(req) {
+  return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
+}
+
+function isEditorAuthorized(req) {
+  return req.headers[EDITOR_TOKEN_HEADER] === EDITOR_PASSWORD_TOKEN;
+}
+
+function requireEditorAccess(req, res) {
+  if (!isMutationRequest(req) || isEditorAuthorized(req)) return true;
+  send(res, 403, { error: 'Urejevalni način je zahtevan za spremembe podatkov.' });
+  return false;
 }
 
 function sendText(res, status, payload) {
@@ -100,6 +117,9 @@ function pad(value, length) {
 }
 
 function dbBackupDir(dbPath = resolveDbPath()) {
+  if (process.env.MELODIJA_BACKUP_DIR) {
+    return path.resolve(process.env.MELODIJA_BACKUP_DIR);
+  }
   return path.join(path.dirname(dbPath), 'backups');
 }
 
@@ -254,6 +274,14 @@ function publicCatalogueTable(config, count = 0) {
   };
 }
 
+function publicSettings(rows) {
+  return Object.fromEntries(
+    rows
+      .filter((row) => row.key !== 'ui.theme')
+      .map((row) => [row.key, row.value])
+  );
+}
+
 async function bootstrap(res) {
   const store = await getStore();
   const metaRows = store.rows('SELECT key, value FROM app_meta ORDER BY key');
@@ -271,7 +299,7 @@ async function bootstrap(res) {
     counts,
     operator,
     meta: Object.fromEntries(metaRows.map((row) => [row.key, row.value])),
-    settings: Object.fromEntries(settingsRows.map((row) => [row.key, row.value])),
+    settings: publicSettings(settingsRows),
     choirs: store.rows('SELECT id, name, short_name AS shortName FROM choirs ORDER BY id')
   });
 }
@@ -280,7 +308,8 @@ async function listSongs(url, res) {
   const store = await getStore();
   const query = normalizeText(url.searchParams.get('query'));
   const choirId = intParam(url.searchParams.get('choir'), 0);
-  const authorId = intParam(url.searchParams.get('author'), 0);
+  const authorText = normalizeText(url.searchParams.get('author'));
+  const authorId = /^\d+$/.test(authorText) ? intParam(authorText, 0) : 0;
   const arrangerId = intParam(url.searchParams.get('arranger'), 0);
   const lyricistId = intParam(url.searchParams.get('lyricist'), 0);
   const note = normalizeText(url.searchParams.get('note'));
@@ -292,7 +321,20 @@ async function listSongs(url, res) {
 
   if (query) {
     const terms = likeVariants(query);
-    const fields = searchFields('s.title', 's.verse', 's.note', 'arranger.name', 'lyricist.name');
+    const fields = searchFields(
+      's.title',
+      's.verse',
+      's.note',
+      'arranger.name',
+      'lyricist.name',
+      'c.name',
+      'c.short_name',
+      'CAST(s.ownkey AS TEXT)',
+      'CAST(s.choir_id AS TEXT)',
+      'CAST(s.number AS TEXT)',
+      'CAST(s.arranger_id AS TEXT)',
+      'CAST(s.lyricist_id AS TEXT)'
+    );
     clauses.push(`(${multiLike(fields, terms)})`);
     params.push(...multiLikeParams(terms, fields.length));
   }
@@ -324,6 +366,7 @@ async function listSongs(url, res) {
   const rows = store.rows(`${songSelect(where, order)} LIMIT ? OFFSET ?`, [...params, limit, offset]);
   const total = store.get(
     `SELECT COUNT(*) AS count FROM songs s
+     LEFT JOIN choirs c ON c.id = s.choir_id
      LEFT JOIN authors arranger ON arranger.id = s.arranger_id
      LEFT JOIN authors lyricist ON lyricist.id = s.lyricist_id
      WHERE ${where}`,
@@ -736,35 +779,61 @@ async function report(url, res) {
   const store = await getStore();
   const type = url.pathname.split('/').pop();
   const choirId = intParam(url.searchParams.get('choir'), 0);
-  const authorId = intParam(url.searchParams.get('author'), 0);
+  const authorText = normalizeText(url.searchParams.get('author'));
+  const authorId = /^\d+$/.test(authorText) ? intParam(authorText, 0) : 0;
   const order = url.searchParams.get('order') === 'number' ? 'number' : 'alpha';
   const lines = [];
 
   if (type === 'authors') {
+    const params = [];
+    let where = 'id != 0';
+    if (authorText) {
+      const terms = likeVariants(authorText);
+      const fields = searchFields('name', 'raw_name', 'CAST(id AS TEXT)');
+      where += ` AND (${multiLike(fields, terms)})`;
+      params.push(...multiLikeParams(terms, fields.length));
+    }
     const rows = store.rows(
-      `SELECT id, name, usage_count AS usageCount, type FROM authors WHERE id != 0
-       ORDER BY ${order === 'number' ? 'id' : 'name COLLATE NOCASE, id'}`
+      `SELECT id, name, usage_count AS usageCount, type FROM authors WHERE ${where}
+       ORDER BY ${order === 'number' ? 'id' : 'name COLLATE NOCASE, id'}`,
+      params
     ).sort((left, right) => (
       order === 'number'
         ? compareNumber(left.id, right.id)
         : compareSlovenian(left.name, right.name) || compareNumber(left.id, right.id)
     ));
-    lines.push(...reportHeader('Seznam AVTORJEV', order === 'number' ? 'Po šifrah' : 'Abecedni'));
+    lines.push(...reportHeader('Seznam AVTORJEV', [
+      order === 'number' ? 'Po šifrah' : 'Abecedni',
+      authorText ? `Avtor: ${authorText}` : ''
+    ].filter(Boolean).join(' | ')));
     rows.forEach((row) => lines.push(`${String(row.id).padStart(6, '0')} ${row.name}`));
     send(res, 200, { title: 'Seznam AVTORJEV', count: rows.length, lines, rows });
     return;
   }
 
   if (type === 'choirs') {
+    const params = [];
+    let where = '1 = 1';
+    if (authorText) {
+      const terms = likeVariants(authorText);
+      const fields = searchFields('name', 'short_name', 'raw_name', 'raw_short_name', 'CAST(id AS TEXT)');
+      where = `(${multiLike(fields, terms)})`;
+      params.push(...multiLikeParams(terms, fields.length));
+    }
     const rows = store.rows(
       `SELECT id, name, short_name AS shortName FROM choirs
-       ORDER BY ${order === 'number' ? 'id' : 'name COLLATE NOCASE, id'}`
+       WHERE ${where}
+       ORDER BY ${order === 'number' ? 'id' : 'name COLLATE NOCASE, id'}`,
+      params
     ).sort((left, right) => (
       order === 'number'
         ? compareNumber(left.id, right.id)
         : compareSlovenian(left.name, right.name) || compareNumber(left.id, right.id)
     ));
-    lines.push(...reportHeader('Seznam ZBOROV', order === 'number' ? 'Po šifrah' : 'Abecedni'));
+    lines.push(...reportHeader('Seznam ZBOROV', [
+      order === 'number' ? 'Po šifrah' : 'Abecedni',
+      authorText ? `Zbor: ${authorText}` : ''
+    ].filter(Boolean).join(' | ')));
     rows.forEach((row) => lines.push(`${String(row.id).padStart(3, '0')} ${pad(row.name, 30)} ${row.shortName || ''}`));
     send(res, 200, { title: 'Seznam ZBOROV', count: rows.length, lines, rows });
     return;
@@ -777,6 +846,25 @@ async function report(url, res) {
       clauses.push('s.choir_id = ?');
       params.push(choirId);
     }
+    if (authorText) {
+      const terms = likeVariants(authorText);
+      const fields = searchFields(
+        's.title',
+        's.verse',
+        's.note',
+        'arranger.name',
+        'lyricist.name',
+        'c.name',
+        'c.short_name',
+        'CAST(s.ownkey AS TEXT)',
+        'CAST(s.choir_id AS TEXT)',
+        'CAST(s.number AS TEXT)',
+        'CAST(s.arranger_id AS TEXT)',
+        'CAST(s.lyricist_id AS TEXT)'
+      );
+      clauses.push(`(${multiLike(fields, terms)})`);
+      params.push(...multiLikeParams(terms, fields.length));
+    }
     const rows = store.rows(
       songSelect(clauses.length ? clauses.join(' AND ') : '1 = 1', order === 'number' ? 's.choir_id, s.number' : 's.title COLLATE NOCASE, s.choir_id, s.number'),
       params
@@ -785,7 +873,10 @@ async function report(url, res) {
         ? compareNumber(left.choirId, right.choirId) || compareNumber(left.number, right.number)
         : compareSlovenian(left.title, right.title) || compareNumber(left.choirId, right.choirId) || compareNumber(left.number, right.number)
     ));
-    const filter = choirId ? `Zbor: ${rows[0]?.choirName || choirId}` : 'Zbor: VSI';
+    const filter = [
+      choirId ? `Zbor: ${rows[0]?.choirName || choirId}` : 'Zbor: VSI',
+      authorText ? `Išči: ${authorText}` : ''
+    ].filter(Boolean).join(' | ');
     lines.push(...reportHeader('Seznam PESMI', filter));
     lines.push('Zbor     Šifra Skladba                                    Avtor                  Opomba');
     rows.forEach((row) => lines.push(formatSongLine(row)));
@@ -805,6 +896,11 @@ async function report(url, res) {
   if (authorId) {
     clauses.push(`${authorField} = ?`);
     params.push(authorId);
+  } else if (authorText) {
+    const terms = likeVariants(authorText);
+    const fields = searchFields(`${authorAlias}.name`, `CAST(${authorField} AS TEXT)`);
+    clauses.push(`(${multiLike(fields, terms)})`);
+    params.push(...multiLikeParams(terms, fields.length));
   }
   const rows = store.rows(
     songSelect(clauses.join(' AND '), `${authorAlias}.name COLLATE NOCASE, ${authorField}, s.choir_id, s.title COLLATE NOCASE`),
@@ -867,7 +963,7 @@ async function maintenanceInfo(res) {
       authors: store.get('SELECT COUNT(*) AS count FROM authors').count,
       choirs: store.get('SELECT COUNT(*) AS count FROM choirs').count
     },
-    settings: Object.fromEntries(settingsRows.map((row) => [row.key, row.value]))
+    settings: publicSettings(settingsRows)
   });
 }
 
@@ -884,6 +980,29 @@ async function backupDatabase(res) {
     message: `Shranjeno: ${file}`,
     backup: { file, name: path.basename(file), size: fs.statSync(file).size },
     backups: listBackups(dbPath)
+  });
+}
+
+async function downloadDatabase(req, res) {
+  if (!isEditorAuthorized(req)) {
+    send(res, 403, { error: 'Urejevalni način je zahtevan za prenos baze.' });
+    return;
+  }
+  const store = await getStore();
+  store.persist();
+  const dbPath = resolveDbPath();
+  fs.stat(dbPath, (error, stat) => {
+    if (error || !stat.isFile()) {
+      send(res, 404, { error: 'Baza melodija.db ni najdena.' });
+      return;
+    }
+    res.writeHead(200, {
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': 'attachment; filename="melodija.db"',
+      'Content-Length': stat.size,
+      'Cache-Control': 'no-store'
+    });
+    fs.createReadStream(dbPath).pipe(res);
   });
 }
 
@@ -1032,6 +1151,9 @@ async function handleApiRequest(req, res) {
     if (!url.pathname.startsWith('/api')) {
       return false;
     }
+    if (!requireEditorAccess(req, res)) {
+      return true;
+    }
 
     if (req.method === 'GET' && url.pathname === '/api/health') {
       send(res, 200, { ok: true, dbPath: resolveDbPath() });
@@ -1122,6 +1244,10 @@ async function handleApiRequest(req, res) {
     }
     if (req.method === 'POST' && url.pathname === '/api/maintenance/backup') {
       await backupDatabase(res);
+      return true;
+    }
+    if (req.method === 'GET' && url.pathname === '/api/maintenance/download-db') {
+      await downloadDatabase(req, res);
       return true;
     }
     if (req.method === 'POST' && url.pathname === '/api/maintenance/restore') {

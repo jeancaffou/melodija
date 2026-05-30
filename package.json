@@ -6,7 +6,9 @@
   "scripts": {
     "migrate": "python3 tools/migrate.py",
     "dev": "node --no-turboshaft app/server/dev-server.cjs",
+    "start:spa": "node app/server/spa-server.cjs",
     "build:renderer": "node --no-turboshaft ./node_modules/vite/bin/vite.js build",
+    "build:renderer:docker": "node --no-opt --no-turboshaft ./node_modules/vite/bin/vite.js build",
     "electron:dev": "ELECTRON_RENDERER_URL=http://localhost:3333 electron .",
     "stage:db": "node tools/stage-companion-db.cjs",
     "dist:win": "npm run build:renderer && electron-builder --win portable --x64 && npm run stage:db"

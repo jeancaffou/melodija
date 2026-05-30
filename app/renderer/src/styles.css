@@ -1,5 +1,6 @@
 :root {
-  font-family: Inter, Roboto, Arial, sans-serif;
+  font-family: "Courier New", monospace;
+  font-size: 16px;
   color: #17201f;
   background: #58aaa7;
 }
@@ -33,6 +34,7 @@ body,
 .modern-header {
   background: #194547;
   color: #f3fffd;
+  font-family: "Courier New", monospace;
 }
 
 .modern-header .q-toolbar {
@@ -68,6 +70,10 @@ body,
   border-color: rgba(243, 255, 253, 0.45);
 }
 
+.modern-mode-indicator {
+  color: #f3fffd;
+}
+
 .modern-shell {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
@@ -75,6 +81,44 @@ body,
   min-height: 0;
   overflow: hidden;
   background: #eef3f1;
+  color: #102625;
+  font-family: "Courier New", monospace;
+  font-size: 15px;
+}
+
+.modern-shell .q-field,
+.modern-shell .q-table,
+.modern-shell .q-item,
+.modern-header .q-field,
+.modern-header .q-btn,
+.modern-header .q-badge {
+  font-family: "Courier New", monospace;
+  font-size: 15px;
+}
+
+.modern-shell .q-field--dense .q-field__control,
+.modern-header .q-field--dense .q-field__control {
+  min-height: 40px;
+  height: 40px;
+}
+
+.modern-shell .q-field--dense .q-field__native,
+.modern-shell .q-field--dense .q-field__input,
+.modern-header .q-field--dense .q-field__native,
+.modern-header .q-field--dense .q-field__input {
+  min-height: 40px;
+  height: 40px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.modern-shell .q-field__label,
+.modern-shell .q-field__native,
+.modern-shell .q-field__input,
+.modern-shell .q-select__dropdown-icon,
+.modern-shell .q-icon {
+  color: #102625;
 }
 
 .modern-shell .q-btn:not(.q-btn--round):not(.q-btn--fab) {
@@ -182,10 +226,25 @@ body,
   padding: 14px;
 }
 
+.sheet-music-notice {
+  flex: 0 0 auto;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid #a26b00;
+  border-radius: 4px;
+  background: #fff2bd;
+  color: #2b2205;
+  font: 700 14px/1.35 "Courier New", monospace;
+}
+
+.sheet-music-notice a {
+  color: #003d86;
+}
+
 .modern-actions {
   display: grid;
   flex: 0 0 auto;
-  grid-template-columns: minmax(190px, 1.2fr) minmax(110px, 0.45fr) repeat(2, minmax(150px, 0.65fr)) minmax(170px, 0.8fr) auto;
+  grid-template-columns: minmax(190px, 1.2fr) minmax(110px, 0.45fr) repeat(2, minmax(150px, 0.65fr)) minmax(170px, 0.8fr) auto auto;
   gap: 10px;
   align-items: center;
   margin-bottom: 12px;
@@ -203,22 +262,72 @@ body,
 .modern-grid {
   display: grid;
   flex: 1 1 auto;
-  grid-template-columns: 400px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
   gap: 12px;
   align-items: start;
   min-height: 0;
   overflow: auto;
 }
 
-.modern-grid > .editor-panel {
+.modern-grid > .catalog-table {
   grid-column: 1;
   grid-row: 1;
+  min-width: 0;
 }
 
-.modern-grid > .catalog-table {
+.modern-grid > .modern-editor-sidebar {
   grid-column: 2;
   grid-row: 1;
   min-width: 0;
+  height: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.modern-editor-sidebar,
+.modern-editor-sidebar * {
+  max-width: 100%;
+}
+
+.modern-editor-sidebar .q-field,
+.modern-editor-sidebar .q-btn,
+.modern-editor-sidebar .q-chip,
+.modern-editor-sidebar .q-field__control,
+.modern-editor-sidebar .q-field__native,
+.modern-editor-sidebar .q-field__input {
+  min-width: 0;
+}
+
+.modern-editor-sidebar .q-btn:not(.q-btn--round) .q-btn__content {
+  min-width: 0;
+  white-space: normal;
+}
+
+.modern-editor-sidebar .context-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+}
+
+.modern-editor-sidebar .context-chips {
+  min-width: 0;
+}
+
+.modern-editor-sidebar .q-chip {
+  overflow: hidden;
+}
+
+.modern-editor-sidebar .relation-row {
+  grid-template-columns: minmax(58px, 74px) minmax(0, 1fr);
+}
+
+.modern-grid.no-editor {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.modern-grid.no-editor > .catalog-table {
+  grid-column: 1;
 }
 
 .catalog-table {
@@ -226,6 +335,7 @@ body,
   background: #f5fbf8;
   color: #102625;
   font-family: "Courier New", monospace;
+  font-size: 15px;
 }
 
 .catalog-table .q-table__top,
@@ -291,6 +401,7 @@ body,
 }
 
 .editor-panel {
+  position: relative;
   display: grid;
   gap: 8px;
   align-content: start;
@@ -299,13 +410,33 @@ body,
   border: 1px solid #cbd8d4;
   border-radius: 6px;
   background: #fff;
+  color: #102625;
 }
 
-.editor-panel > .q-btn {
+.editor-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+.editor-panel > .q-btn:not(.editor-close) {
   justify-self: stretch;
   width: 100%;
   min-width: 124px;
   min-height: 34px;
+}
+
+.editor-close.q-btn {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+}
+
+.editor-close.q-btn .q-btn__content {
+  width: auto;
+  min-width: 0;
 }
 
 .panel-title {
@@ -548,6 +679,12 @@ body,
 }
 
 .dos-shell.intro-mode {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
   background: #58aaa7;
 }
 
@@ -595,6 +732,107 @@ body,
   color: #020203;
   background: #55abaa;
   cursor: pointer;
+}
+
+.dos-shell.intro-mode .dos-intro {
+  width: 100%;
+  height: 100%;
+  cursor: default;
+}
+
+.splash-entry-panel {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(18px, 7vh, 68px);
+  z-index: 20;
+  display: flex;
+  gap: 14px;
+  transform: translateX(-50%);
+}
+
+.splash-entry-button,
+.splash-password-dialog button {
+  min-width: 178px;
+  border: 2px solid #020203;
+  border-radius: 0;
+  padding: 8px 12px;
+  background: #55abaa;
+  color: #020203;
+  font: 700 14px/1 "Courier New", monospace;
+  box-shadow:
+    inset 2px 2px 0 #bffefd,
+    inset -2px -2px 0 #266967,
+    3px 3px 0 #020203;
+  cursor: pointer;
+}
+
+.splash-entry-button:active,
+.splash-password-dialog button:active {
+  transform: translate(2px, 2px);
+  box-shadow:
+    inset 1px 1px 0 #266967,
+    inset -1px -1px 0 #bffefd,
+    1px 1px 0 #020203;
+}
+
+.splash-password-dialog {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 7000;
+  display: grid;
+  width: min(360px, calc(100vw - 32px));
+  gap: 12px;
+  transform: translate(-50%, -50%);
+  border: 2px solid #020203;
+  padding: 14px;
+  background: #0000a8;
+  color: #eaffff;
+  font: 14px/1.25 "Courier New", monospace;
+  box-shadow:
+    inset 2px 2px 0 #55abaa,
+    inset -2px -2px 0 #001313,
+    6px 6px 0 rgba(0, 0, 0, 0.55);
+}
+
+.splash-dialog-title {
+  background: #55abaa;
+  color: #020203;
+  padding: 4px 8px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.splash-password-dialog label {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.splash-password-dialog input {
+  border: 1px solid #55abaa;
+  border-radius: 0;
+  padding: 5px 7px;
+  background: #020203;
+  color: #eaffff;
+  font: inherit;
+  outline: none;
+}
+
+.splash-dialog-error {
+  color: #ffb6de;
+}
+
+.splash-dialog-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.splash-dialog-actions button {
+  min-width: 92px;
+  padding: 7px 10px;
 }
 
 .dos-cobol-screen {
@@ -778,12 +1016,16 @@ body,
   padding: 0 6px;
   border: 0;
   background: transparent;
-  color: #00f4ff;
+  color: #001313;
   font: inherit;
   text-align: left;
   overflow: hidden;
   text-overflow: clip;
   white-space: nowrap;
+}
+
+.dos-menu.secondary button {
+  color: #eaffff;
 }
 
 .dos-menu button.selected {
@@ -910,6 +1152,19 @@ body,
   white-space: pre;
 }
 
+.dos-sheet-notice {
+  position: absolute;
+  right: 18px;
+  bottom: 30px;
+  z-index: 45;
+  max-width: min(520px, calc(100vw - 70px));
+  padding: 5px 8px;
+  border: 1px solid #001313;
+  background: #fff2bd;
+  color: #001313;
+  font: 700 13px/1.35 "Courier New", monospace;
+}
+
 .dos-maintenance {
   display: grid;
   gap: 8px;
@@ -937,9 +1192,13 @@ body,
 
 @media (max-width: 980px) {
   .modern-shell,
-  .modern-grid,
   .report-layout {
     grid-template-columns: 1fr;
+  }
+
+  .modern-shell {
+    grid-template-rows: auto minmax(0, 1fr);
+    height: calc(100vh - 50px);
   }
 
   .report-layout {
@@ -948,7 +1207,8 @@ body,
 
   .modern-nav {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-height: 142px;
     border-right: 0;
     border-bottom: 1px solid #ccd8d5;
   }
@@ -957,22 +1217,155 @@ body,
     grid-template-columns: 1fr;
   }
 
-  .modern-grid > .editor-panel,
-  .modern-grid > .catalog-table {
-    grid-column: 1;
-    grid-row: auto;
-  }
-
   .dos-panel {
     margin-left: 0;
     margin-top: 285px;
   }
 }
 
+@media (max-width: 720px) {
+  html,
+  body,
+  #app,
+  .app-page {
+    overflow: auto;
+  }
+
+  .modern-header .q-toolbar {
+    min-height: 50px;
+    flex-wrap: wrap;
+    padding: 6px 8px;
+  }
+
+  .modern-title {
+    min-width: auto;
+  }
+
+  .modern-song-count {
+    display: none !important;
+  }
+
+  .modern-logout {
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+  }
+
+  .modern-logout .block {
+    display: none !important;
+  }
+
+  .modern-quick-jump {
+    order: 2;
+    width: 100%;
+  }
+
+  .modern-shell {
+    height: auto;
+    min-height: calc(100vh - 50px);
+    overflow: visible;
+  }
+
+  .modern-main,
+  .modern-grid,
+  .report-layout {
+    height: auto;
+    overflow: visible;
+  }
+
+  .modern-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modern-grid > .catalog-table {
+    grid-column: 1;
+  }
+
+  .modern-grid > .modern-editor-sidebar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    z-index: 5000;
+    box-sizing: border-box;
+    width: 100%;
+    height: auto;
+    max-height: min(78vh, 680px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #163331;
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -8px 8px rgba(6, 23, 22, 0.25);
+  }
+
+  .modern-nav .q-btn {
+    min-height: 38px;
+    padding: 4px 6px;
+  }
+
+  .modern-nav .q-btn .block {
+    font-size: 12px;
+  }
+
+  .catalog-table .q-table__middle {
+    max-height: 56vh;
+    overflow: auto;
+  }
+
+  .dos-shell:not(.intro-mode) {
+    grid-template-rows: 37px minmax(0, 1fr) auto 24px;
+    height: 100vh;
+    min-height: 0;
+  }
+
+  .dos-top {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .dos-top span:nth-child(2) {
+    display: none;
+  }
+
+  .dos-work {
+    padding: 18px 8px 8px;
+    overflow: auto;
+  }
+
+  .dos-menu-stack {
+    inset: 22px auto auto 14px;
+  }
+
+  .splash-entry-panel {
+    width: calc(100vw - 24px);
+    flex-direction: column;
+  }
+
+  .dos-sheet-notice {
+    position: static;
+    margin: 0 8px 2px;
+    max-width: none;
+    max-height: 48px;
+    overflow: hidden;
+  }
+
+  .dos-form-row,
+  .dos-buttons {
+    grid-template-columns: 70px minmax(120px, 1fr) minmax(92px, 140px);
+  }
+
+  .print-button {
+    display: none;
+  }
+}
+
 @media print {
   @page {
-    size: A4 landscape;
-    margin: 8mm;
+    size: A4 portrait;
+    margin: 7mm;
   }
 
   html,
@@ -989,7 +1382,12 @@ body,
   .app-page,
   .modern-shell,
   .modern-main,
-  .report-layout {
+  .report-layout,
+  .dos-shell,
+  .dos-frame,
+  .dos-work,
+  .dos-panel,
+  .dos-catalog {
     display: block !important;
     width: auto !important;
     min-width: 0 !important;
@@ -1001,24 +1399,47 @@ body,
     background: #fff !important;
   }
 
+  .dos-frame,
+  .dos-work,
+  .dos-panel,
+  .dos-catalog {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .modern-header,
+  .modern-nav,
+  .dos-top,
+  .dos-side,
+  .dos-menu-stack,
+  .dos-panel-title,
+  .dos-form-row,
+  .dos-buttons,
+  .dos-sheet-notice,
+  .dos-status,
+  .report-options,
+  .catalog-table,
+  .editor-panel:not(.author-editor-panel) {
+    display: none !important;
+  }
+
   body * {
     visibility: hidden !important;
   }
 
   .print-report,
-  .print-report *,
-  .report-preview,
-  .report-preview *,
-  .dos-report,
-  .dos-report * {
+  .print-report * {
     visibility: visible !important;
   }
 
-  .print-report,
-  .report-preview,
-  .dos-report {
-    position: absolute;
-    inset: 0 auto auto 0;
+  .dos-report,
+  .report-preview {
+    display: none !important;
+  }
+
+  .print-report {
+    position: static !important;
+    inset: auto;
     box-sizing: border-box;
     width: 100%;
     min-height: auto;
@@ -1034,13 +1455,13 @@ body,
 
   .print-report {
     display: block;
-    font: 8.5pt/1.22 "Courier New", monospace;
+    font: 7.4pt/1.15 "Courier New", monospace;
     overflow: visible !important;
   }
 
   .print-report h1 {
     margin: 0 0 2mm;
-    font-size: 14pt;
+    font-size: 12pt;
   }
 
   .print-meta {
@@ -1074,7 +1495,7 @@ body,
   }
 
   .print-col-choirShort {
-    width: 8%;
+    width: 9%;
   }
 
   .print-col-number {
@@ -1082,7 +1503,7 @@ body,
   }
 
   .print-col-title {
-    width: 25%;
+    width: 23%;
   }
 
   .print-col-activeAuthor {
@@ -1090,11 +1511,11 @@ body,
   }
 
   .print-col-note {
-    width: 27%;
+    width: 26%;
   }
 
   .print-col-verse {
-    width: 15%;
+    width: 17%;
   }
 
   .print-col-id {
