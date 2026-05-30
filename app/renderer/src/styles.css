@@ -790,6 +790,28 @@ body,
   transform: translateX(-50%);
 }
 
+.splash-loading-panel {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(18px, 7vh, 68px);
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 1ch;
+  min-width: 18ch;
+  padding: 12px 18px;
+  border: 2px solid #020203;
+  background: #0000a8;
+  color: #eaffff;
+  font: 700 14px/1 "Courier New", monospace;
+  justify-content: center;
+  box-shadow:
+    inset 2px 2px 0 #55abaa,
+    inset -2px -2px 0 #001313,
+    6px 6px 0 rgba(0, 0, 0, 0.55);
+  transform: translateX(-50%);
+}
+
 .splash-entry-button,
 .splash-password-dialog button {
   min-width: 178px;

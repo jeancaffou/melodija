@@ -50,6 +50,9 @@
       <q-page class="app-page" tabindex="0">
         <section v-if="loading" class="dos-shell intro-mode">
           <dos-splash :interactive="false" />
+          <div class="splash-loading-panel" role="status" aria-live="polite">
+            <span>{{ APP_LOADING_MESSAGE }}</span><span class="dos-loading-cursor" aria-hidden="true">█</span>
+          </div>
         </section>
 
         <template v-else>
@@ -969,6 +972,9 @@ const SongForm = defineComponent({
   }
 });
 
+const APP_LOADING_MESSAGE = 'Nalagam...';
+const DATA_LOADING_MESSAGE = 'Nalagam podatke...';
+
 const loading = ref(true);
 const theme = ref('dos');
 const introVisible = ref(true);
@@ -1015,7 +1021,7 @@ const databaseFilter = ref('');
 const databaseShowTechnical = ref(false);
 const databaseLoading = ref(false);
 const dataLoadingCount = ref(0);
-const dataLoadingMessage = ref('Nalagam podatke...');
+const dataLoadingMessage = ref(DATA_LOADING_MESSAGE);
 const databasePagination = ref({
   sortBy: 'title',
   descending: false,
@@ -1305,15 +1311,15 @@ function notifyError(error) {
   $q.notify({ type: 'negative', message: error?.message || String(error) });
 }
 
-async function withDataLoading(message, task) {
-  dataLoadingMessage.value = message || 'Nalagam podatke...';
+async function withDataLoading(task, message = DATA_LOADING_MESSAGE) {
+  dataLoadingMessage.value = message;
   dataLoadingCount.value += 1;
   try {
     return await task();
   } finally {
     dataLoadingCount.value = Math.max(0, dataLoadingCount.value - 1);
     if (!dataLoadingCount.value) {
-      dataLoadingMessage.value = 'Nalagam podatke...';
+      dataLoadingMessage.value = DATA_LOADING_MESSAGE;
     }
   }
 }
@@ -1436,7 +1442,7 @@ async function initialize() {
 }
 
 async function refreshSongs() {
-  const result = await withDataLoading('Nalagam podatke...', () => api.songs({
+  const result = await withDataLoading(() => api.songs({
     query: query.value,
     choir: choirFilter.value || '',
     arranger: songArrangerFilter.value || '',
@@ -1459,19 +1465,19 @@ async function refreshSongs() {
 }
 
 async function refreshAuthors() {
-  const result = await withDataLoading('Nalagam podatke...', () => api.authors({ query: activeView.value === 'authors' ? query.value : '', sort: authorSort.value, limit: 10000 }));
+  const result = await withDataLoading(() => api.authors({ query: activeView.value === 'authors' ? query.value : '', sort: authorSort.value, limit: 10000 }));
   authors.value = result.rows;
   clampDosSelection();
 }
 
 async function refreshChoirs() {
-  const result = await withDataLoading('Nalagam podatke...', () => api.choirs({ sort: choirSort.value }));
+  const result = await withDataLoading(() => api.choirs({ sort: choirSort.value }));
   choirs.value = result.rows;
   clampDosSelection();
 }
 
 async function refreshNotes() {
-  const result = await withDataLoading('Nalagam podatke...', () => api.notes({ query: noteSearch.value || '', limit: 300 }));
+  const result = await withDataLoading(() => api.notes({ query: noteSearch.value || '', limit: 300 }));
   notes.value = result.rows;
   if (!selectedNoteRows.value[0] && result.rows[0]) {
     editNote(result.rows[0]);
@@ -1981,7 +1987,7 @@ async function openQuickJump(option) {
 }
 
 async function generateReport() {
-  const result = await withDataLoading('Nalagam podatke...', () => api.report({
+  const result = await withDataLoading(() => api.report({
     type: reportType.value,
     choir: choirFilter.value || '',
     author: reportAuthor.value || '',
@@ -2086,15 +2092,15 @@ async function openDosLookup(order) {
   lookupOffset.value = 0;
 
   if (target.includes('choir')) {
-    const result = await withDataLoading('Nalagam podatke...', () => api.choirs({ sort: order === 'number' ? 'id' : 'name' }));
+    const result = await withDataLoading(() => api.choirs({ sort: order === 'number' ? 'id' : 'name' }));
     lookupTitle.value = order === 'number' ? 'Zbori po šifrah' : 'Zbori ABC';
     lookupRows.value = result.rows.map(mapChoirLookup);
   } else if (target.includes('author') || target.includes('lyricist') || target.includes('arranger')) {
-    const result = await withDataLoading('Nalagam podatke...', () => api.authors({ query: '', sort: order === 'number' ? 'id' : 'name', limit: 10000 }));
+    const result = await withDataLoading(() => api.authors({ query: '', sort: order === 'number' ? 'id' : 'name', limit: 10000 }));
     lookupTitle.value = order === 'number' ? 'Avtorji po šifrah' : 'Avtorji ABC';
     lookupRows.value = result.rows.map(mapAuthorLookup);
   } else {
-    const result = await withDataLoading('Nalagam podatke...', () => api.songs({
+    const result = await withDataLoading(() => api.songs({
       query: query.value,
       choir: choirFilter.value || '',
       sort: order === 'number' ? 'number' : 'title',
@@ -2115,7 +2121,7 @@ async function openSongRelationLookup(role, authorId, order) {
   lookupTarget.value = 'song.record';
   lookupSelected.value = 0;
   lookupOffset.value = 0;
-  const result = await withDataLoading('Nalagam podatke...', () => api.songs({
+  const result = await withDataLoading(() => api.songs({
     [role]: authorId,
     sort: order === 'number' ? 'number' : 'title',
     limit: 10000
