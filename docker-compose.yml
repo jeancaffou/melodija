@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3333:3333"
+      - "172.17.0.1:3333:3333"
     environment:
       NODE_ENV: production
       MELODIJA_DB: /data/melodija.db
