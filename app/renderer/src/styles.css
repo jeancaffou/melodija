@@ -616,8 +616,30 @@ body,
 
 .report-options {
   align-content: start;
+  box-sizing: border-box;
+  min-width: 0;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.report-options > *,
+.report-options .q-field,
+.report-options .q-field__control,
+.report-options .q-field__native,
+.report-options .q-field__input,
+.report-options .q-btn {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.report-options .q-field,
+.report-options .q-btn:not(.q-btn--round):not(.q-btn--fab) {
+  width: 100%;
+}
+
+.report-options .q-btn:not(.q-btn--round):not(.q-btn--fab) .q-btn__content {
+  min-width: 0;
 }
 
 .report-table {
