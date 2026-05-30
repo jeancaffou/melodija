@@ -10,7 +10,7 @@
 
 Melodija je digitalni katalog zborovskih skladb, avtorjev, zborov in pripadajočih šifrantov. Namenjena je hitremu iskanju, urejanju in pregledovanju glasbenega gradiva, ki je bilo prvotno vodeno v starem DOS okolju.
 
-Projekt temelji na izvirni aplikaciji, ki jo je razvil Vinko Stegel. Prvotna različica je bila napisana v jeziku COBOL okrog leta 1999 za Dušana Kafola, da je lahko vodil zbirko svojih 9000+ notnih zapisov pesmi in skladb.
+Projekt temelji na izvirni aplikaciji, ki jo je razvil Vinko Stegel. Prvotna različica je bila napisana v jeziku COBOL okrog leta 1993 za Dušana Kafola, da je lahko vodil zbirko svojih 9000+ notnih zapisov pesmi in skladb.
 
 Ta repozitorij vsebuje sodobno prepisano različico aplikacije. Podatki iz izvirnih datotek Micro Focus COBOL IDX/IND se preselijo v podatkovno zbirko SQLite, uporabniški vmesnik pa je na novo zgrajen kot spletna in namizna aplikacija.
 

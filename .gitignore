@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 .idea/
+.agents/
+.claude/
+.gemini/
 
 # Build and release artefacts
 dist/

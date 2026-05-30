@@ -1227,6 +1227,18 @@ body,
   table-layout: fixed;
 }
 
+.dos-table-scroll {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.dos-table-scroll .dos-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+}
+
 .dos-table th,
 .dos-table td {
   padding: 2px 5px;
@@ -1365,9 +1377,66 @@ body,
     grid-template-columns: 1fr;
   }
 
+  .dos-work {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: auto;
+  }
+
+  .dos-menu-stack {
+    position: relative;
+    inset: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(194px, 334px));
+    gap: 10px;
+    align-items: start;
+    justify-content: start;
+    flex: 0 0 auto;
+  }
+
+  .dos-menu,
+  .dos-menu.secondary {
+    width: min(100%, 334px);
+    min-height: 0;
+    box-sizing: border-box;
+    margin: 0;
+  }
+
   .dos-panel {
-    margin-left: 0;
-    margin-top: 285px;
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+  }
+
+  .dos-lookup {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+  }
+
+  .dos-catalog {
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  .dos-form-row,
+  .dos-buttons {
+    grid-template-columns: 70px minmax(120px, 1fr) minmax(92px, 140px) 92px;
+  }
+
+  .dos-edit-grid,
+  .dos-edit-grid.compact {
+    grid-template-columns: 70px minmax(96px, 1fr) 70px minmax(140px, 1fr);
+  }
+
+  .dos-edit-grid .dos-wide-field {
+    grid-column: span 3;
   }
 }
 
@@ -1498,7 +1567,29 @@ body,
   }
 
   .dos-menu-stack {
-    inset: 22px auto auto 14px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .dos-menu,
+  .dos-menu.secondary {
+    width: 100%;
+  }
+
+  .dos-frame {
+    grid-template-columns: 24px minmax(0, 1fr);
+    margin: 2px;
+    border-width: 2px;
+  }
+
+  .dos-side {
+    border-right-width: 2px;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .dos-panel {
+    padding: 20px 8px 10px;
   }
 
   .splash-entry-panel {
@@ -1516,7 +1607,40 @@ body,
 
   .dos-form-row,
   .dos-buttons {
-    grid-template-columns: 70px minmax(120px, 1fr) minmax(92px, 140px) 92px;
+    grid-template-columns: 70px minmax(0, 1fr);
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .dos-form-row.single-action {
+    grid-template-columns: 70px minmax(0, 1fr);
+  }
+
+  .dos-form-row button,
+  .dos-form-row select,
+  .dos-form-row input,
+  .dos-buttons button {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .dos-edit-grid,
+  .dos-edit-grid.compact {
+    grid-template-columns: 70px minmax(0, 1fr);
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .dos-edit-grid .dos-wide-field {
+    grid-column: 2;
+  }
+
+  .dos-maintenance .dos-form-row {
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
+
+  .dos-report {
+    max-height: 42vh;
   }
 
   .print-button {

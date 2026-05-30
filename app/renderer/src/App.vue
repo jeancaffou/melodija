@@ -627,21 +627,23 @@
                   </div>
                   <div v-if="lookupVisible" class="dos-lookup">
                     <div class="dos-lookup-title">{{ lookupTitle }}</div>
-                    <table class="dos-table">
-                      <tbody>
-                        <tr
-                          v-for="(row, index) in visibleLookupRows"
-                          :key="row.key"
-                          :class="{ selected: lookupSelected === lookupOffset + index }"
-                          @click="selectLookupRow(lookupOffset + index)"
-                          @dblclick="applyLookupRow"
-                        >
-                          <td>{{ row.code }}</td>
-                          <td>{{ row.name }}</td>
-                          <td>{{ row.extra }}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <div class="dos-table-scroll">
+                      <table class="dos-table">
+                        <tbody>
+                          <tr
+                            v-for="(row, index) in visibleLookupRows"
+                            :key="row.key"
+                            :class="{ selected: lookupSelected === lookupOffset + index }"
+                            @click="selectLookupRow(lookupOffset + index)"
+                            @dblclick="applyLookupRow"
+                          >
+                            <td>{{ row.code }}</td>
+                            <td>{{ row.name }}</td>
+                            <td>{{ row.extra }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                   <div v-if="dataLoading" class="dos-data-loader" role="status" aria-live="polite">
                     <span>{{ dataLoadingMessage }}</span><span class="dos-loading-cursor" aria-hidden="true">█</span>
@@ -659,25 +661,27 @@
                         </select>
                         <button @click="showClassicSongs">Prikaži</button>
                       </div>
-                      <table class="dos-table">
-                        <thead>
-                          <tr><th>Zbor</th><th>Šifra</th><th>Naziv</th><th>Avtor</th><th>Verz</th></tr>
-                        </thead>
-                        <tbody>
-                          <tr
-                            v-for="(song, index) in visibleDosSongs"
-                            :key="song.ownkey"
-                            :class="{ selected: selectedResult === dosOffset + index }"
-                            @click="selectDosResult(dosOffset + index)"
-                          >
-                            <td>{{ song.choirShort }}</td>
-                            <td>{{ song.number }}</td>
-                            <td>{{ song.title }}</td>
-                            <td>{{ song.arrangerName }}</td>
-                            <td>{{ song.verse }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      <div class="dos-table-scroll">
+                        <table class="dos-table">
+                          <thead>
+                            <tr><th>Zbor</th><th>Šifra</th><th>Naziv</th><th>Avtor</th><th>Verz</th></tr>
+                          </thead>
+                          <tbody>
+                            <tr
+                              v-for="(song, index) in visibleDosSongs"
+                              :key="song.ownkey"
+                              :class="{ selected: selectedResult === dosOffset + index }"
+                              @click="selectDosResult(dosOffset + index)"
+                            >
+                              <td>{{ song.choirShort }}</td>
+                              <td>{{ song.number }}</td>
+                              <td>{{ song.title }}</td>
+                              <td>{{ song.arrangerName }}</td>
+                              <td>{{ song.verse }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                       <div class="dos-edit-grid">
                         <label>Zbor :</label><input v-model.number="songForm.choirId" data-dos-field="song.choir" :disabled="isReadOnly" />
                         <label>Šifra :</label><input v-model.number="songForm.number" data-dos-field="song.number" :disabled="isReadOnly" />
@@ -700,18 +704,20 @@
                         <input v-model="query" />
                         <button @click="showClassicAuthors">Prikaži</button>
                       </div>
-                      <table class="dos-table narrow">
-                        <tbody>
-                          <tr
-                            v-for="(author, index) in visibleDosAuthors"
-                            :key="author.id"
-                            :class="{ selected: selectedResult === dosOffset + index }"
-                            @click="selectDosResult(dosOffset + index)"
-                          >
-                            <td>{{ author.id }}</td><td>{{ author.name }}</td><td>{{ author.type }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      <div class="dos-table-scroll">
+                        <table class="dos-table narrow">
+                          <tbody>
+                            <tr
+                              v-for="(author, index) in visibleDosAuthors"
+                              :key="author.id"
+                              :class="{ selected: selectedResult === dosOffset + index }"
+                              @click="selectDosResult(dosOffset + index)"
+                            >
+                              <td>{{ author.id }}</td><td>{{ author.name }}</td><td>{{ author.type }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                       <div class="dos-edit-grid compact">
                         <label>Šifra :</label><input v-model.number="authorForm.id" data-dos-field="author.id" :disabled="isReadOnly" />
                         <label>Naziv :</label><input v-model="authorForm.name" data-dos-field="author.name" :disabled="isReadOnly" />
@@ -730,18 +736,20 @@
                         <label>Zbori :</label>
                         <button @click="showClassicChoirs">Prikaži</button>
                       </div>
-                      <table class="dos-table narrow">
-                        <tbody>
-                          <tr
-                            v-for="(choir, index) in visibleDosChoirs"
-                            :key="choir.id"
-                            :class="{ selected: selectedResult === dosOffset + index }"
-                            @click="selectDosResult(dosOffset + index)"
-                          >
-                            <td>{{ choir.id }}</td><td>{{ choir.name }}</td><td>{{ choir.shortName }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      <div class="dos-table-scroll">
+                        <table class="dos-table narrow">
+                          <tbody>
+                            <tr
+                              v-for="(choir, index) in visibleDosChoirs"
+                              :key="choir.id"
+                              :class="{ selected: selectedResult === dosOffset + index }"
+                              @click="selectDosResult(dosOffset + index)"
+                            >
+                              <td>{{ choir.id }}</td><td>{{ choir.name }}</td><td>{{ choir.shortName }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                       <div class="dos-edit-grid compact">
                         <label>Šifra :</label><input v-model.number="choirForm.id" data-dos-field="choir.id" :disabled="isReadOnly" />
                         <label>Naziv :</label><input v-model="choirForm.name" data-dos-field="choir.name" :disabled="isReadOnly" />
