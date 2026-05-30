@@ -56,9 +56,9 @@
         </section>
 
         <template v-else>
-          <section v-if="introVisible" class="dos-shell intro-mode">
-            <dos-splash :interactive="false" />
-            <div class="splash-entry-panel">
+          <section v-if="introVisible" class="dos-shell intro-mode" @click.self="enterCatalogMode">
+            <dos-splash :interactive="false" @click="enterCatalogMode" />
+            <div class="splash-entry-panel" @click.stop>
               <button class="splash-entry-button" @click="enterCatalogMode">Pregled kataloga</button>
               <button class="splash-entry-button" @click="requestEditorMode">Urejevalni način</button>
             </div>
@@ -845,15 +845,15 @@
                         <button :disabled="isReadOnly" @click="saveAppClock">Datum/Ura</button>
                         <button :disabled="isReadOnly" @click="saveOperator">Vnašalec</button>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div v-if="isReadOnly" class="dos-sheet-notice">
-                Za notno gradivo pišite na dusan@kafol.net ter navedite ime skladbe in opombo.
-              </div>
-              <div class="dos-status">{{ statusLine }}</div>
-          </section>
+	                    </div>
+	                  </div>
+	                  <div v-if="isReadOnly" class="dos-sheet-notice">
+	                    Za notno gradivo pišite na dusan@kafol.net ter navedite ime skladbe in opombo.
+	                  </div>
+	                </div>
+	              </div>
+	              <div class="dos-status">{{ statusLine }}</div>
+	          </section>
           </template>
         </template>
 
@@ -2711,6 +2711,10 @@ function handleKeydown(event) {
     if (event.key === 'Escape' && entryPasswordVisible.value) {
       event.preventDefault();
       cancelEditorPassword();
+    }
+    if (event.key === ' ' && !entryPasswordVisible.value && !inField) {
+      event.preventDefault();
+      enterCatalogMode();
     }
     return;
   }

@@ -1290,11 +1290,12 @@ body,
 
 .dos-sheet-notice {
   position: absolute;
-  right: 18px;
-  bottom: 30px;
+  right: 12px;
+  bottom: 12px;
   z-index: 45;
-  max-width: min(520px, calc(100vw - 70px));
-  padding: 5px 8px;
+  box-sizing: border-box;
+  max-width: min(520px, calc(100% - 28px));
+  padding: 8px 8px;
   border: 1px solid #001313;
   background: #fff2bd;
   color: #001313;
@@ -1599,9 +1600,10 @@ body,
 
   .dos-sheet-notice {
     position: static;
-    margin: 0 8px 2px;
+    margin: 0 8px 4px;
     max-width: none;
     max-height: 48px;
+    padding: 7px 9px;
     overflow: hidden;
   }
 
