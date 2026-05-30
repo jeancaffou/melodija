@@ -653,10 +653,11 @@
                     <div v-if="activeView === 'songs'" class="dos-catalog">
                       <div class="dos-form-row">
                         <label>Išči :</label>
-                        <input ref="dosSearchInput" v-model="query" @input="refreshSongsFromStart" />
-                        <select v-model.number="choirFilter" data-dos-field="report.choir" @change="refreshSongsFromStart">
+                        <input ref="dosSearchInput" v-model="query" />
+                        <select v-model.number="choirFilter" data-dos-field="report.choir">
                           <option v-for="option in choirOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                         </select>
+                        <button @click="showClassicSongs">Prikaži</button>
                       </div>
                       <table class="dos-table">
                         <thead>
@@ -681,10 +682,10 @@
                         <label>Zbor :</label><input v-model.number="songForm.choirId" data-dos-field="song.choir" :disabled="isReadOnly" />
                         <label>Šifra :</label><input v-model.number="songForm.number" data-dos-field="song.number" :disabled="isReadOnly" />
                         <label>Naziv :</label><input v-model="songForm.title" data-dos-field="song.title" :disabled="isReadOnly" />
-                        <label>Verz :</label><input v-model="songForm.verse" data-dos-field="song.verse" :disabled="isReadOnly" />
+                        <label>Verz :</label><input class="dos-wide-field" v-model="songForm.verse" data-dos-field="song.verse" :disabled="isReadOnly" />
                         <label>Pesnik :</label><input v-model.number="songForm.lyricistId" data-dos-field="song.lyricist" :disabled="isReadOnly" />
                         <label>Avtor :</label><input v-model.number="songForm.arrangerId" data-dos-field="song.arranger" :disabled="isReadOnly" />
-                        <label>Opomba :</label><input v-model="songForm.note" data-dos-field="song.note" :disabled="isReadOnly" />
+                        <label>Opomba :</label><input class="dos-wide-field" v-model="songForm.note" data-dos-field="song.note" :disabled="isReadOnly" />
                       </div>
                       <div class="dos-buttons">
                         <button :disabled="isReadOnly" @click="saveSong">Shrani</button>
@@ -696,7 +697,8 @@
                     <div v-else-if="activeView === 'authors'" class="dos-catalog">
                       <div class="dos-form-row">
                         <label>Naziv :</label>
-                        <input v-model="query" @input="refreshAuthorsFromStart" />
+                        <input v-model="query" />
+                        <button @click="showClassicAuthors">Prikaži</button>
                       </div>
                       <table class="dos-table narrow">
                         <tbody>
@@ -724,6 +726,10 @@
                     </div>
 
                     <div v-else-if="activeView === 'choirs'" class="dos-catalog">
+                      <div class="dos-form-row single-action">
+                        <label>Zbori :</label>
+                        <button @click="showClassicChoirs">Prikaži</button>
+                      </div>
                       <table class="dos-table narrow">
                         <tbody>
                           <tr
@@ -759,16 +765,16 @@
                       </div>
                       <div class="dos-form-row">
                         <label>Zbor :</label>
-                        <select v-model.number="choirFilter" data-dos-field="report.choir" @change="generateReport">
+                        <select v-model.number="choirFilter" data-dos-field="report.choir">
                           <option v-for="option in choirOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                         </select>
-                        <select v-model="reportOrder" @change="generateReport">
+                        <select v-model="reportOrder">
                           <option v-for="option in orderOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                         </select>
                       </div>
                       <div class="dos-form-row">
                         <label>{{ reportAuthorLabel }} :</label>
-                        <input v-model="reportAuthor" data-dos-field="report.author" @input="generateReport" />
+                        <input v-model="reportAuthor" data-dos-field="report.author" />
                         <button class="print-button" @click="printReport">Tiskaj</button>
                       </div>
                       <pre class="dos-report">{{ reportText }}</pre>
@@ -1011,6 +1017,7 @@ const selectedNoteRows = ref([]);
 const songs = ref([]);
 const authors = ref([]);
 const choirs = ref([]);
+const choirChoices = ref([]);
 const notes = ref([]);
 const databaseTables = ref([]);
 const databaseTable = ref('songs');
@@ -1071,6 +1078,7 @@ const entryPasswordInput = ref(null);
 let songContextRequest = 0;
 let authorContextRequest = 0;
 let choirContextRequest = 0;
+let bootstrapPromise = null;
 
 const ENTRY_MODE_KEY = 'melodija.entryMode';
 const EDITOR_TOKEN_KEY = 'melodija.editorToken';
@@ -1178,7 +1186,7 @@ const activeDatabaseTable = computed(() => databaseTables.value.find((table) => 
 const databaseRowKey = computed(() => activeDatabaseTable.value?.rowKey || 'id');
 const choirOptions = computed(() => [
   { label: 'VSI ZBORI', value: 0 },
-  ...choirs.value.map((choir) => ({ label: `${choir.id} ${choir.name}`, value: choir.id }))
+  ...choirChoices.value.map((choir) => ({ label: `${choir.id} ${choir.name}`, value: choir.id }))
 ]);
 const today = computed(() => {
   if (!appDate.value) return new Date().toLocaleDateString('sl-SI');
@@ -1202,6 +1210,7 @@ const showModernActions = computed(() => ['songs', 'authors', 'choirs', 'notes']
 const showModernSearch = computed(() => ['songs', 'authors'].includes(activeView.value));
 const dataLoading = computed(() => !loading.value && dataLoadingCount.value > 0);
 const modernActionClass = computed(() => ({
+  'is-songs': activeView.value === 'songs',
   'is-compact': activeView.value !== 'songs',
   'is-single': activeView.value === 'choirs'
 }));
@@ -1363,16 +1372,16 @@ function persistEntryMode(mode) {
   localStorage.setItem(ENTRY_MODE_KEY, mode);
 }
 
-function enterCatalogMode() {
+async function enterCatalogMode() {
   persistEntryMode('catalog');
-  enterIntro();
+  await enterIntro();
 }
 
-function requestEditorMode({ enterAfterUnlock = true } = {}) {
+async function requestEditorMode({ enterAfterUnlock = true } = {}) {
   entryPasswordEnterAfterUnlock.value = enterAfterUnlock;
   if (localStorage.getItem(EDITOR_TOKEN_KEY) === EDITOR_PASSWORD_TOKEN) {
     persistEntryMode('editor');
-    if (entryPasswordEnterAfterUnlock.value) enterIntro();
+    if (entryPasswordEnterAfterUnlock.value) await enterIntro();
     return;
   }
   entryPassword.value = '';
@@ -1389,7 +1398,7 @@ async function submitEditorPassword() {
     entryPassword.value = '';
     entryPasswordError.value = '';
     entryPasswordVisible.value = false;
-    if (entryPasswordEnterAfterUnlock.value) enterIntro();
+    if (entryPasswordEnterAfterUnlock.value) await enterIntro();
     return;
   }
   entryPassword.value = '';
@@ -1404,12 +1413,12 @@ function cancelEditorPassword() {
   entryPasswordEnterAfterUnlock.value = true;
 }
 
-function toggleEntryMode() {
+async function toggleEntryMode() {
   if (isEditor.value) {
     persistEntryMode('catalog');
     return;
   }
-  requestEditorMode({ enterAfterUnlock: introVisible.value });
+  await requestEditorMode({ enterAfterUnlock: introVisible.value });
 }
 
 function requireEditor() {
@@ -1426,19 +1435,27 @@ function logout() {
 }
 
 async function initialize() {
-  const boot = await api.bootstrap();
-  dbPath.value = boot.dbPath;
-  Object.assign(counts, boot.counts);
   theme.value = localStorage.getItem('melodija.theme') || 'dos';
   restoreEntryMode();
-  appDate.value = boot.settings['app.date'] || '';
-  appTime.value = boot.settings['app.time'] || '';
-  operatorName.value = boot.settings['operator.name'] || boot.operator?.name || 'dusan';
-  choirs.value = boot.choirs;
-  await Promise.all([refreshSongs(), refreshAuthors()]);
-  await filterAuthors('', (fn) => fn());
-  await filterNotes('', (fn) => fn());
   loading.value = false;
+}
+
+async function ensureBootstrap() {
+  if (bootstrapPromise) return bootstrapPromise;
+  bootstrapPromise = (async () => {
+    const boot = await api.bootstrap();
+    dbPath.value = boot.dbPath;
+    Object.assign(counts, boot.counts);
+    appDate.value = boot.settings['app.date'] || '';
+    appTime.value = boot.settings['app.time'] || '';
+    operatorName.value = boot.settings['operator.name'] || boot.operator?.name || 'dusan';
+    choirChoices.value = boot.choirs || [];
+    return boot;
+  })().catch((error) => {
+    bootstrapPromise = null;
+    throw error;
+  });
+  return bootstrapPromise;
 }
 
 async function refreshSongs() {
@@ -1473,6 +1490,7 @@ async function refreshAuthors() {
 async function refreshChoirs() {
   const result = await withDataLoading(() => api.choirs({ sort: choirSort.value }));
   choirs.value = result.rows;
+  choirChoices.value = result.rows;
   clampDosSelection();
 }
 
@@ -1536,6 +1554,20 @@ async function refreshAuthorsFromStart() {
   resetDosPosition();
   await refreshAuthors();
   if (theme.value === 'dos') selectDosResult(0);
+}
+
+async function showClassicSongs() {
+  await refreshSongsFromStart();
+}
+
+async function showClassicAuthors() {
+  await refreshAuthorsFromStart();
+}
+
+async function showClassicChoirs() {
+  resetDosPosition();
+  await refreshChoirs();
+  selectDosResult(0);
 }
 
 function editSong(song) {
@@ -2002,7 +2034,8 @@ async function reportOptionsChanged() {
   if (!showReportAuthorFilter.value) {
     reportAuthor.value = null;
   }
-  await generateReport();
+  reportText.value = '';
+  reportRows.value = [];
 }
 
 function syncClassicReportMenuSelection() {
@@ -2487,10 +2520,37 @@ async function saveOperator() {
   await loadMaintenance();
 }
 
-async function openView(view) {
+function clearClassicViewData(view) {
+  if (view === 'songs') {
+    songs.value = [];
+    selectedRows.value = [];
+    clearSongContext();
+    assign(songForm, emptySong());
+  } else if (view === 'authors') {
+    authors.value = [];
+    selectedAuthorRows.value = [];
+    clearAuthorContext();
+    assign(authorForm, { id: null, name: '', type: 1 });
+  } else if (view === 'choirs') {
+    choirs.value = [];
+    selectedChoirRows.value = [];
+    clearChoirContext();
+    assign(choirForm, { id: null, name: '', shortName: '' });
+  } else if (view === 'reports') {
+    reportText.value = '';
+    reportRows.value = [];
+  }
+}
+
+async function openView(view, { load = true } = {}) {
+  await ensureBootstrap();
   cancelServicePassword();
   activeView.value = view;
   resetDosPosition();
+  if (!load) {
+    clearClassicViewData(view);
+    return;
+  }
   if (view === 'songs') await refreshSongs();
   if (view === 'authors') await refreshAuthors();
   if (view === 'choirs') await refreshChoirs();
@@ -2539,10 +2599,19 @@ function selectChild(index) {
   menuLevel.value = 'child';
 }
 
-function enterIntro() {
-  introVisible.value = false;
-  activeView.value = theme.value === 'modern' ? 'songs' : 'menu';
-  menuLevel.value = 'main';
+async function enterIntro() {
+  loading.value = true;
+  try {
+    await ensureBootstrap();
+    introVisible.value = false;
+    activeView.value = theme.value === 'modern' ? 'songs' : 'menu';
+    menuLevel.value = 'main';
+    if (theme.value === 'modern') {
+      await openView('songs');
+    }
+  } finally {
+    loading.value = false;
+  }
 }
 
 function returnToIntro() {
@@ -2623,7 +2692,7 @@ async function activateChild() {
     await runMaintenanceAction(child.action);
     return;
   }
-  await openView(child.view);
+  await openView(child.view, { load: theme.value !== 'dos' });
 }
 
 function handleKeydown(event) {
